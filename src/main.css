@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Manrope', sans-serif;
+  --app-bg: #f6eedf;
+  --app-text: #2f2219;
+  --app-muted: #6e5a4a;
+  --dark-900: 246 238 223;
+  --dark-800: 255 248 238;
+  --dark-700: 233 217 199;
+  --dark-600: 198 164 135;
+  --gold-400: 216 184 158;
+  --gold-500: 165 117 82;
+  --gold-600: 129 89 64;
+  --gold-900: 79 52 37;
+  --orange-500: 201 146 90;
+  --orange-600: 170 118 68;
+}
+
+html[data-theme='light'] {
+  --app-bg: #f6eedf;
+  --app-text: #2f2219;
+  --app-muted: #6e5a4a;
+  --dark-900: 246 238 223;
+  --dark-800: 255 248 238;
+  --dark-700: 233 217 199;
+  --dark-600: 198 164 135;
+  --gold-400: 216 184 158;
+  --gold-500: 165 117 82;
+  --gold-600: 129 89 64;
+  --gold-900: 79 52 37;
+  --orange-500: 201 146 90;
+  --orange-600: 170 118 68;
+}
+
+html[data-theme='dark'] {
+  --app-bg: #0b1120;
+  --app-text: #e2e8f0;
+  --app-muted: #98a9cb;
+  --dark-900: 11 17 32;
+  --dark-800: 19 27 53;
+  --dark-700: 35 46 82;
+  --dark-600: 70 88 139;
+  --gold-400: 129 140 248;
+  --gold-500: 99 102 241;
+  --gold-600: 79 70 229;
+  --gold-900: 43 47 117;
+  --orange-500: 96 165 250;
+  --orange-600: 59 130 246;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--app-text);
+  background:
+    radial-gradient(120% 120% at 5% 0%, rgba(var(--gold-500), 0.08) 0%, transparent 48%),
+    radial-gradient(120% 140% at 95% 5%, rgba(var(--gold-400), 0.08) 0%, transparent 55%),
+    var(--app-bg);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+html[data-theme='light'] .text-gray-100,
+html[data-theme='light'] .text-gray-300 {
+  color: #3a281b !important;
+}
+
+html[data-theme='light'] .text-gray-400,
+html[data-theme='light'] .text-gray-500 {
+  color: #715a45 !important;
+}
+
+html[data-theme='dark'] .text-gray-100 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='dark'] .text-gray-300 {
+  color: #c4d0eb !important;
+}
+
+html[data-theme='dark'] .text-gray-400,
+html[data-theme='dark'] .text-gray-500 {
+  color: #95a7cf !important;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Custom Glassmorphism Utility */
+@layer components {
+  .glass-card {
+    @apply bg-dark-800 bg-opacity-60 backdrop-blur-glass border border-dark-600 border-opacity-30 shadow-glass rounded-2xl;
+  }
+}
+
+/* ── Rounded inputs (Vuetify outlined) ── */
+.v-field--variant-outlined {
+  border-radius: 12px !important;
+}
+.v-field--variant-outlined .v-field__outline__start {
+  border-radius: 12px 0 0 12px !important;
+  flex-basis: 12px !important;
+  min-width: 12px !important;
+}
+.v-field--variant-outlined .v-field__outline__end {
+  border-radius: 0 12px 12px 0 !important;
+}
+.v-field--variant-outlined .v-field__outline__notch {
+  border-radius: 0 !important;
+}
+
+/* ── Logo swap por tema ── */
+.logo-light {
+  display: block;
+  mix-blend-mode: multiply;
+}
+.logo-dark {
+  display: none !important;
+}
+html[data-theme='dark'] .logo-light {
+  display: none !important;
+}
+html[data-theme='dark'] .logo-dark {
+  display: block !important;
+}
