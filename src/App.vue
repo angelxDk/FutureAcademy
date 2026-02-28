@@ -1,8 +1,8 @@
 <template>
-  <v-app>
+  <v-app :theme="userStore.settings.theme" :class="['app-root', `theme-${userStore.settings.theme}`]" style="background: transparent !important;">
     <canvas id="bg-canvas-3d" class="three-bg" aria-hidden="true"></canvas>
 
-    <v-main class="relative z-10">
+    <v-main style="position: relative; z-index: 10;">
       <v-container fluid class="py-6">
         <div v-if="authLoading" class="d-flex flex-column align-center justify-center" style="min-height: 70vh; gap: 16px">
           <v-progress-circular indeterminate size="48" color="primary" />
@@ -14,20 +14,20 @@
             <div class="glass-card px-8 py-10">
               <div class="text-center mb-8">
                 <div class="app-logo-wrap app-logo-wrap--login">
-                  <img src="./logo.png" alt="Future Academy" class="h-24 w-auto logo-light" />
-                  <img src="./logo-dark-theme.png" alt="Future Academy" class="h-24 w-auto logo-dark" />
+                  <img src="./logo.png" alt="Future Academy" class="logo-light" style="height: 96px; width: auto;" />
+                  <img src="./logo-dark-theme.png" alt="Future Academy" class="logo-dark" style="height: 96px; width: auto;" />
                 </div>
                 <p class="text-sm text-medium-emphasis mt-1">{{ authMode === 'login' ? 'Entre para continuar estudando!' : 'Crie sua conta gratuitamente' }}</p>
               </div>
 
               <div class="grid gap-3">
-                <v-btn color="primary" variant="flat" prepend-icon="mdi-google" @click="loginWithGoogle" class="w-full justify-start font-semibold" height="48">{{ authMode === 'login' ? 'Continuar com Google' : 'Cadastrar com Google' }}</v-btn>
-                <v-btn color="secondary" variant="outlined" prepend-icon="mdi-facebook" @click="loginWithFacebook" class="w-full justify-start" height="48">{{ authMode === 'login' ? 'Continuar com Facebook' : 'Cadastrar com Facebook' }}</v-btn>
+                <v-btn color="primary" variant="flat" prepend-icon="mdi-google" @click="loginWithGoogle" block class="font-semibold" height="48" style="justify-content: flex-start;">{{ authMode === 'login' ? 'Continuar com Google' : 'Cadastrar com Google' }}</v-btn>
+                <v-btn color="secondary" variant="outlined" prepend-icon="mdi-facebook" @click="loginWithFacebook" block height="48" style="justify-content: flex-start;">{{ authMode === 'login' ? 'Continuar com Facebook' : 'Cadastrar com Facebook' }}</v-btn>
               </div>
 
-              <div class="flex items-center gap-4 my-7">
+              <div style="display: flex; align-items: center; gap: 16px; margin: 28px 0;">
                 <v-divider />
-                <span class="text-xs text-medium-emphasis whitespace-nowrap font-medium tracking-wide">ou use seu e-mail</span>
+                <span style="white-space: nowrap; font-size: 0.75rem; color: var(--app-muted); flex-shrink: 0; font-weight: 500; letter-spacing: 0.04em;">ou use seu e-mail</span>
                 <v-divider />
               </div>
 
@@ -41,7 +41,7 @@
 
               <p class="text-center text-sm mt-6 mb-0">
                 <span class="text-medium-emphasis">{{ authMode === 'login' ? 'Não tem conta?' : 'Já tem uma conta?' }}</span>
-                <a href="#" class="font-semibold ml-1" style="color: rgb(var(--gold-500))" @click.prevent="authMode = authMode === 'login' ? 'register' : 'login'">
+                <a href="#" class="font-semibold" style="color: rgb(var(--gold-500)); margin-left: 4px;" @click.prevent="authMode = authMode === 'login' ? 'register' : 'login'">
                   {{ authMode === 'login' ? 'Criar conta' : 'Entrar' }}
                 </a>
               </p>
@@ -58,22 +58,22 @@
               </div>
               <div class="app-header__titles">
                 <h1 class="app-header__title">Hub Acadêmico</h1>
-                <p class="app-header__subtitle">Foco em organização, comunidade e IA</p>
+                <p class="app-header__subtitle">Foco em organização</p>
               </div>
             </div>
 
             <div class="app-header__right">
               <div class="user-profile-chip">
                 <v-avatar size="32" class="user-avatar-img">
-                  <v-img :src="state.profile.photo || authUser.photo" :alt="authUser.name" cover />
+                  <v-img :src="profile.photo || authUser.photo" :alt="authUser.name" cover />
                 </v-avatar>
-                <span class="user-profile-name">{{ (state.profile.name || authUser.name).split(' ')[0] }}</span>
+                <span class="user-profile-name">{{ (profile.name || authUser.name).split(' ')[0] }}</span>
               </div>
 
-              <button class="theme-toggle" :class="{ 'theme-toggle--light': state.settings.theme === 'light' }" @click="toggleTheme" :title="state.settings.theme === 'dark' ? 'Mudar para claro' : 'Mudar para escuro'">
-                <span class="theme-toggle__icon" :key="state.settings.theme">
+              <button class="theme-toggle" :class="{ 'theme-toggle--light': settings.theme === 'light' }" @click="toggleTheme" :title="settings.theme === 'dark' ? 'Mudar para claro' : 'Mudar para escuro'">
+                <span class="theme-toggle__icon" :key="settings.theme">
                   <!-- Sol (tema light / classic) -->
-                  <svg v-if="state.settings.theme !== 'dark'" class="theme-icon theme-icon--sun" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg v-if="settings.theme !== 'dark'" class="theme-icon theme-icon--sun" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g class="sun-rays-group">
                       <line x1="12" y1="2"    x2="12" y2="5.5"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                       <line x1="12" y1="18.5" x2="12" y2="22"   stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -112,14 +112,14 @@
                     <v-list-item
                       v-else
                       :title="item.label"
-                      :active="activeSection === item.id"
+                      :active="$route.name === item.id"
                       rounded="lg"
-                      active-color="primary"
+                      color="primary"
                       class="mb-1 nav-item"
-                      @click="activeSection = item.id"
+                      @click="router.push({ name: item.id })"
                     >
                       <template v-slot:prepend>
-                        <div v-html="item.icon" class="mr-3 flex items-center justify-center w-6 h-6" :class="{ 'text-primary': activeSection === item.id, 'text-medium-emphasis': activeSection !== item.id }"></div>
+                        <div v-html="item.icon" class="mr-3 d-flex align-center justify-center" style="width: 1.5rem; height: 1.5rem;" :class="{ 'text-primary': $route.name === item.id, 'text-medium-emphasis': $route.name !== item.id }"></div>
                       </template>
                     </v-list-item>
                   </template>
@@ -130,7 +130,11 @@
             <v-col cols="12" md="9" lg="10">
               <div ref="sectionContent">
                 <Suspense>
-                  <component :is="activeSectionComponent" :ctx="sectionCtx" />
+                  <router-view v-slot="{ Component }">
+                    <KeepAlive :max="6">
+                      <component :is="Component" />
+                    </KeepAlive>
+                  </router-view>
                   <template #fallback>
                     <div class="glass-card p-12 text-center flex flex-col items-center justify-center">
                       <v-progress-circular indeterminate color="primary" size="48" width="4" />
@@ -224,92 +228,179 @@
   </v-app>
 </template>
 
-<script>
-import { defineAsyncComponent, nextTick } from 'vue';
-import appOptions from './appOptions';
+<script setup>
+import { 
+  nextTick, ref, computed, watch, onMounted, onBeforeUnmount 
+} from 'vue';
+import { storeToRefs } from 'pinia';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from './stores/useAuthStore';
+import { useAppStore } from './stores/useAppStore';
+import { useUserStore } from './stores/useUserStore';
+import { useTheme } from 'vuetify';
 
+import { use3DScene } from './composables/use3DScene';
+
+// -- GSAP Local Loading --
 let _gsap = null;
 async function loadGsap() {
   if (!_gsap) _gsap = (await import('gsap')).gsap;
   return _gsap;
 }
 
-const baseMethods = appOptions.methods || {};
-const baseWatch = appOptions.watch || {};
-const baseComputed = appOptions.computed || {};
+// -- Stores --
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
+const appStore = useAppStore();
+const userStore = useUserStore();
+const vuetifyTheme = useTheme();
 
-const SECTION_COMPONENTS = {
-  dashboard: defineAsyncComponent(() => import('./sections/DashboardSection.vue')),
-  subjects: defineAsyncComponent(() => import('./sections/SubjectsSection.vue')),
-  timetable: defineAsyncComponent(() => import('./sections/TimetableSection.vue')),
-  agenda: defineAsyncComponent(() => import('./sections/AgendaSection.vue')),
-  records: defineAsyncComponent(() => import('./sections/RecordsSection.vue')),
-  pomodoro: defineAsyncComponent(() => import('./sections/PomodoroSection.vue')),
-  communities: defineAsyncComponent(() => import('./sections/CommunitiesSection.vue')),
-  assistant: defineAsyncComponent(() => import('./sections/AssistantSection.vue')),
-  'focus-music': defineAsyncComponent(() => import('./sections/FocusMusicSection.vue')),
-  profile: defineAsyncComponent(() => import('./sections/ProfileSection.vue'))
+const { authUser, authLoading } = storeToRefs(authStore);
+const { toast, focusPlayer, focusPlaylists, activePlaylistIndex } = storeToRefs(appStore);
+const { settings, profile } = storeToRefs(userStore);
+
+// -- Local UI State --
+const showLogoutDialog = ref(false);
+const authMode = ref('login');
+const authName = ref('');
+const authEmail = ref('');
+const authPassword = ref('');
+const authPasswordConfirm = ref('');
+
+const sectionContent = ref(null);
+
+// -- Components --
+// Vue Router handled dynamically through 'router-view' components.
+
+// -- 3D Scene --
+const { init3DScene, destroy3DScene } = use3DScene(appStore);
+
+// -- Nav Items --
+const navItems = [
+  { id: 'dashboard', label: 'Painel', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' },
+  { id: 'subjects', label: 'Matérias', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
+  { id: 'timetable', label: 'Horários', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
+  { id: 'agenda', label: 'Agenda', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' },
+  { id: 'records', label: 'Trabalhos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
+  { separator: true },
+  { id: 'pomodoro', label: 'Pomodoro', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+  { id: 'communities', label: 'Comunidades', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+  { id: 'focus-music', label: 'Foco & Música', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>' },
+  { separator: true },
+  { id: 'assistant', label: 'IA Acadêmica', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+  { id: 'profile', label: 'Perfil', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' }
+];
+
+// -- Theme & Config --
+const syncTheme = (themeName) => {
+  const normalized = themeName === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', normalized);
+  vuetifyTheme.change(normalized);
 };
 
-const baseData = appOptions.data;
+const toggleTheme = async () => {
+  userStore.settings.theme = userStore.settings.theme === 'dark' ? 'light' : 'dark';
+  syncTheme(userStore.settings.theme);
+  
+  // Persist locally for next load natively
+  const syncStore = (await import('./stores/useSyncStore')).useSyncStore();
+  syncStore.persistState();
+  appStore.showToast(`Tema alterado para ${userStore.settings.theme}.`);
+};
 
-export default {
-  ...appOptions,
-  data() {
-    return {
-      ...(typeof baseData === 'function' ? baseData.call(this) : {}),
-      showLogoutDialog: false,
-      authMode: 'login',
-      authName: '',
-      authPasswordConfirm: ''
-    };
-  },
-  computed: {
-    ...baseComputed,
-    activeSectionComponent() {
-      return SECTION_COMPONENTS[this.activeSection] || SECTION_COMPONENTS.dashboard;
-    },
-    sectionCtx() {
-      return this;
-    }
-  },
-  watch: {
-    ...baseWatch,
-    activeSection() {
-      this.animateSectionIn();
-    }
-  },
-  methods: {
-    ...baseMethods,
-    toggleTheme() {
-      this.state.settings.theme = this.state.settings.theme === 'dark' ? 'light' : 'dark';
-      this.applyThemeAndSave();
-    },
-    animateSectionIn() {
-      nextTick(async () => {
-        const section = this.$refs.sectionContent;
-        if (!section) return;
-        const gsap = await loadGsap();
-        gsap.fromTo(
-          section,
-          { autoAlpha: 0, y: 12 },
-          { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out' }
-        );
-      });
-    }
-  },
-  mounted() {
-    if (typeof appOptions.mounted === 'function') {
-      appOptions.mounted.call(this);
-    }
-    this.animateSectionIn();
-  },
-  beforeUnmount() {
-    if (typeof appOptions.beforeUnmount === 'function') {
-      appOptions.beforeUnmount.call(this);
-    }
+const notificationsEnabledLabel = computed(() => 
+  userStore.settings.notificationsEnabled ? 'Notificações ativadas' : 'Ativar notificações'
+);
+
+const enableNotifications = async () => {
+  if (!('Notification' in window)) {
+    appStore.showToast('Navegador não suporta.');
+    return;
   }
+  
+  const syncStore = (await import('./stores/useSyncStore')).useSyncStore();
+  
+  if (Notification.permission === 'granted') {
+    userStore.settings.notificationsEnabled = true;
+    appStore.showToast('Notificações já permitidas.');
+    syncStore.persistState();
+    return;
+  }
+  
+  Notification.requestPermission().then((permission) => {
+    userStore.settings.notificationsEnabled = permission === 'granted';
+    if (permission === 'granted') appStore.showToast('Notificações ativadas.');
+    syncStore.persistState();
+  });
 };
+
+// -- Auth Methods --
+const loginWithGoogle = () => authStore.loginWithGoogle();
+const loginWithFacebook = () => authStore.loginWithFacebook();
+const loginWithEmail = () => {
+  authStore.authEmail = authEmail.value;
+  authStore.authPassword = authPassword.value;
+  authStore.loginWithEmail(authMode.value, authName.value, authPasswordConfirm.value);
+};
+const logout = () => {
+  authStore.logout();
+};
+
+// -- App Functionality --
+const animateSectionIn = async () => {
+  await nextTick();
+  if (!sectionContent.value) return;
+  const gsap = await loadGsap();
+  gsap.fromTo(
+    sectionContent.value,
+    { autoAlpha: 0, y: 12 },
+    { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+  );
+};
+
+const openFocusPlayer = () => {
+  appStore.focusPlayer.visible = true;
+  appStore.focusPlayer.collapsed = false;
+};
+const closeFocusPlayer = () => appStore.focusPlayer.visible = false;
+const toggleFocusPlayerCollapse = () => appStore.focusPlayer.collapsed = !appStore.focusPlayer.collapsed;
+
+const currentEmbedUrl = computed(() => {
+  if (!focusPlaylists.value.length) return '';
+  const pl = focusPlaylists.value[activePlaylistIndex.value];
+  return pl ? pl.embedUrl : focusPlaylists.value[0].embedUrl;
+});
+
+const activeFocusPlaylist = computed(() => {
+  if (!focusPlaylists.value.length) return null;
+  return focusPlaylists.value[activePlaylistIndex.value] || focusPlaylists.value[0];
+});
+
+
+// -- Lifecycle --
+onMounted(() => {
+  authStore.initAuth();
+  animateSectionIn();
+  
+  watch(() => userStore.settings.theme, (newVal) => {
+    syncTheme(newVal);
+  }, { immediate: true });
+  
+  // Watch for exact moment when auth is complete and user is set, then init 3D
+  // If app loads and user is already null, we init.
+  let initWatcher = watch(() => authStore.authLoading, (loading) => {
+    if (!loading) {
+      if (initWatcher) initWatcher();
+      init3DScene();
+    }
+  }, { immediate: true });
+});
+
+onBeforeUnmount(() => {
+  authStore.cleanup();
+  destroy3DScene();
+});
 </script>
 
 <style scoped>

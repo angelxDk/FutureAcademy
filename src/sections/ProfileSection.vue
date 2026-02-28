@@ -5,21 +5,21 @@
       <p class="text-sm text-medium-emphasis mb-6">Suas informações pessoais</p>
       <v-row>
         <v-col cols="12" lg="7">
-          <v-form @submit.prevent="ctx.saveProfile">
+          <v-form @submit.prevent="saveProfile">
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model.trim="ctx.profileForm.name" label="Nome" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
+                <v-text-field v-model.trim="profileForm.name" label="Nome" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model.trim="ctx.profileForm.email" label="E-mail" type="email" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
+                <v-text-field v-model.trim="profileForm.email" label="E-mail" type="email" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model.trim="ctx.profileForm.course" label="Curso" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
+                <v-text-field v-model.trim="profileForm.course" label="Curso" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
               </v-col>
               <v-col cols="12" md="6">
                 <div class="photo-upload-wrapper">
                   <label class="text-xs text-medium-emphasis font-semibold uppercase tracking-wider mb-2 block">Foto de perfil</label>
-                  <input class="photo-input" type="file" accept="image/*" @change="ctx.onPhotoChange" />
+                  <input class="photo-input" type="file" accept="image/*" @change="onPhotoChange" />
                 </div>
               </v-col>
               <v-col cols="12">
@@ -29,14 +29,14 @@
           </v-form>
         </v-col>
 
-        <v-col cols="12" lg="5" class="flex flex-col items-center justify-center gap-3">
+        <v-col cols="12" lg="5" class="d-flex flex-column align-center justify-center ga-3">
           <v-avatar size="120" class="mb-1">
-            <v-img :src="ctx.profileForm.photo || ctx.defaultAvatar" alt="Foto de perfil" cover />
+            <v-img :src="profileForm.photo || DEFAULT_AVATAR" alt="Foto de perfil" cover />
           </v-avatar>
           <div class="text-center">
-            <h3 class="text-base font-bold text-high-emphasis">{{ ctx.profileForm.name || 'Seu nome' }}</h3>
-            <p class="text-sm text-medium-emphasis mb-1">{{ ctx.profileForm.course || 'Seu curso' }}</p>
-            <small class="text-medium-emphasis">{{ ctx.profileForm.email || 'seu-email@exemplo.com' }}</small>
+            <h3 class="text-base font-bold text-high-emphasis">{{ profileForm.name || 'Seu nome' }}</h3>
+            <p class="text-sm text-medium-emphasis mb-1">{{ profileForm.course || 'Seu curso' }}</p>
+            <small class="text-medium-emphasis">{{ profileForm.email || 'seu-email@exemplo.com' }}</small>
           </div>
         </v-col>
       </v-row>
@@ -45,12 +45,73 @@
 </template>
 
 <script setup>
-defineProps({
-  ctx: {
-    type: Object,
-    required: true
-  }
+import { ref, onMounted } from 'vue';
+import { useUserStore } from '../stores/useUserStore';
+import { useSyncStore } from '../stores/useSyncStore';
+import { useAppStore } from '../stores/useAppStore';
+import { DEFAULT_AVATAR } from '../utils/constants';
+
+const userStore = useUserStore();
+const syncStore = useSyncStore();
+const appStore = useAppStore();
+
+const profileForm = ref({
+  name: '',
+  email: '',
+  course: '',
+  photo: ''
 });
+
+onMounted(() => {
+  profileForm.value = {
+    name: userStore.profile?.name || '',
+    email: userStore.profile?.email || '',
+    course: userStore.profile?.course || '',
+    photo: userStore.profile?.photo || ''
+  };
+});
+
+const saveProfile = () => {
+  if (!userStore.profile) {
+    userStore.profile = {};
+  }
+  userStore.profile.name = profileForm.value.name;
+  userStore.profile.email = profileForm.value.email;
+  userStore.profile.course = profileForm.value.course;
+  if(profileForm.value.photo) {
+      userStore.profile.photo = profileForm.value.photo;
+  }
+  syncStore.persistState();
+  appStore.showToast('Perfil atualizado.');
+};
+
+const onPhotoChange = (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const MAX = 200;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    const compressed = canvas.toDataURL('image/jpeg', 0.82);
+    
+    profileForm.value.photo = compressed;
+    if (!userStore.profile) {
+        userStore.profile = {};
+    }
+    userStore.profile.photo = compressed;
+    
+    syncStore.persistState();
+    appStore.showToast('Foto de perfil atualizada.');
+  };
+  img.src = url;
+};
 </script>
 
 <style scoped>

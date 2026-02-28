@@ -7,14 +7,14 @@
         <h2 class="text-xl font-bold text-primary">Painel</h2>
         <p class="text-sm text-medium-emphasis">Visão geral da rotina</p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+      <div class="stats-grid mt-4">
         <div
-          v-for="stat in ctx.statsCards"
+          v-for="stat in statsCards"
           :key="stat.label"
-          class="bg-dark-700 bg-opacity-50 rounded-xl p-4 border border-dark-600 border-opacity-50"
+          class="stat-card"
         >
           <p class="text-xs uppercase tracking-wider text-medium-emphasis mb-1 font-semibold">{{ stat.label }}</p>
-          <div class="flex items-center gap-3">
+          <div class="d-flex align-center ga-3">
             <div class="text-primary" v-html="stat.icon"></div>
             <h3 class="text-2xl font-bold text-high-emphasis">{{ stat.value }}</h3>
           </div>
@@ -24,7 +24,7 @@
 
     <!-- Grade semanal -->
     <div class="glass-card overflow-hidden">
-      <div class="px-6 pt-5 pb-3 flex items-baseline gap-3">
+      <div class="px-6 pt-5 pb-3 d-flex align-baseline ga-3">
         <p class="text-sm font-semibold text-primary uppercase tracking-wider">Grade Semanal</p>
         <p class="text-xs text-medium-emphasis">1ª Série · 2026/B</p>
       </div>
@@ -39,24 +39,23 @@
           <tbody>
             <tr v-for="slot in timeSlots" :key="slot.start">
               <td class="td-hora">
-                <span class="block font-mono text-[11px] text-medium-emphasis">{{ slot.start }}</span>
-                <span class="block font-mono text-[11px] text-medium-emphasis">{{ slot.end }}</span>
+                <span class="block font-mono text-medium-emphasis" style="font-size: 11px">{{ slot.start }} – {{ slot.end }}</span>
               </td>
               <td v-for="d in weekDays" :key="d.value" class="td-cell">
                 <template v-for="entry in getCell(d.value, slot.start, slot.end)" :key="entry.id">
                   <div
                     class="cell-chip"
                     :style="{ borderLeftColor: subjectColor(entry.subjectId) }"
-                    :title="'Clique para editar: ' + ctx.subjectName(entry.subjectId)"
+                    :title="'Clique para editar: ' + subjectName(entry.subjectId)"
                     @click="openEdit(entry)"
                   >
                     <span
-                      class="text-[11px] font-semibold leading-tight block truncate"
+                      class="cell-name"
                       :style="{ color: subjectColor(entry.subjectId) }"
                     >
-                      {{ ctx.subjectName(entry.subjectId) }}
+                      {{ subjectName(entry.subjectId) }}
                     </span>
-                    <span class="text-[10px] text-medium-emphasis leading-tight block truncate">
+                    <span class="cell-prof text-medium-emphasis">
                       {{ professorName(entry.subjectId) }}
                     </span>
                   </div>
@@ -71,10 +70,10 @@
     <!-- Novo registro de estudo -->
     <div class="glass-card p-6">
       <p class="text-sm font-semibold text-primary mb-4 uppercase tracking-wider">Novo Registro de Estudo</p>
-      <v-form class="flex flex-wrap gap-3 items-end" @submit.prevent="ctx.addQuickStudySession">
+      <v-form class="d-flex flex-wrap ga-3 align-end" @submit.prevent="addQuickStudySession">
         <v-select
-          v-model="ctx.quickStudy.subjectId"
-          :items="ctx.state.subjects"
+          v-model="quickStudy.subjectId"
+          :items="subjectsStore.subjects"
           item-title="name"
           item-value="id"
           label="Matéria"
@@ -82,10 +81,10 @@
           density="comfortable"
           bg-color="transparent"
           color="primary"
-          class="min-w-[200px] flex-1"
+          style="min-width: 200px; flex: 1"
         />
         <v-text-field
-          v-model.number="ctx.quickStudy.minutes"
+          v-model.number="quickStudy.minutes"
           label="Minutos estudados"
           type="number"
           min="1"
@@ -111,7 +110,7 @@
         <div class="grid gap-3">
           <v-select
             v-model="editEntry.subjectId"
-            :items="ctx.state.subjects"
+            :items="subjectsStore.subjects"
             item-title="name"
             item-value="id"
             label="Matéria"
@@ -122,7 +121,7 @@
           />
           <v-select
             v-model.number="editEntry.day"
-            :items="ctx.dayOptions"
+            :items="DAY_OPTIONS"
             item-title="label"
             item-value="value"
             label="Dia"
@@ -131,7 +130,7 @@
             color="primary"
             bg-color="transparent"
           />
-          <div class="flex gap-3">
+          <div class="d-flex ga-3">
             <v-text-field
               v-model="editEntry.start"
               label="Início"
@@ -172,14 +171,95 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useSubjectsStore } from '../stores/useSubjectsStore';
+import { useTimetableStore } from '../stores/useTimetableStore';
+import { useAgendaStore } from '../stores/useAgendaStore';
+import { useRecordsStore } from '../stores/useRecordsStore';
+import { usePomodoroStore } from '../stores/usePomodoroStore';
+import { useSyncStore } from '../stores/useSyncStore';
+import { useAppStore } from '../stores/useAppStore';
+import { DAY_OPTIONS } from '../utils/constants';
+import { parseDateTime } from '../utils/date';
+import { safeNumber, uid } from '../utils/helpers';
 
-const props = defineProps({
-  ctx: { type: Object, required: true }
-});
+const subjectsStore = useSubjectsStore();
+const timetableStore = useTimetableStore();
+const agendaStore = useAgendaStore();
+const recordsStore = useRecordsStore();
+const pomodoroStore = usePomodoroStore();
+const syncStore = useSyncStore();
+const appStore = useAppStore();
 
 const editDialog = ref(false);
 const editEntry = ref(null);
+
+const quickStudy = ref({ subjectId: '', minutes: 25 });
+
+const statsCards = computed(() => {
+  const pendingRecords = recordsStore.records.filter((item) => item.status !== 'concluido').length;
+  const upcomingEvents = agendaStore.events.filter((event) => {
+    const when = parseDateTime(event.date, event.time);
+    return when && when.getTime() >= Date.now();
+  }).length;
+  const totalMinutes = pomodoroStore.studySessions.reduce(
+    (sum, item) => sum + safeNumber(item.minutes, 0),
+    0
+  );
+
+  return [
+    {
+      label: 'Matérias',
+      value: subjectsStore.subjects.length,
+      color: 'gold',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>'
+    },
+    {
+      label: 'Eventos futuros',
+      value: upcomingEvents,
+      color: 'secondary',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+    },
+    {
+      label: 'Pendências',
+      value: pendingRecords,
+      color: 'primary',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+    },
+    {
+      label: 'Min. estudados',
+      value: totalMinutes,
+      color: 'accent',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+    }
+  ];
+});
+
+function subjectName(subjectId) {
+  return subjectsStore.subjects.find((item) => item.id === subjectId)?.name || 'Sem matéria';
+}
+
+function addQuickStudySession() {
+  if (!quickStudy.value.subjectId) {
+    appStore.showToast('Selecione uma matéria.');
+    return;
+  }
+  const minutes = safeNumber(quickStudy.value.minutes, 0);
+  if (minutes <= 0) {
+    appStore.showToast('Informe minutos válidos.');
+    return;
+  }
+  pomodoroStore.studySessions.push({
+    id: uid(),
+    subjectId: quickStudy.value.subjectId,
+    minutes,
+    source: 'manual',
+    createdAt: new Date().toISOString()
+  });
+  syncStore.persistState();
+  quickStudy.value.minutes = 25;
+  appStore.showToast('Sessão de estudo registrada.');
+}
 
 function openEdit(entry) {
   editEntry.value = { ...entry };
@@ -188,10 +268,10 @@ function openEdit(entry) {
 
 function saveEdit() {
   if (!editEntry.value) return;
-  const idx = props.ctx.state.timetable.findIndex(e => e.id === editEntry.value.id);
+  const idx = timetableStore.timetable.findIndex(e => e.id === editEntry.value.id);
   if (idx !== -1) {
-    Object.assign(props.ctx.state.timetable[idx], editEntry.value);
-    props.ctx.persistState();
+    Object.assign(timetableStore.timetable[idx], editEntry.value);
+    syncStore.persistState();
   }
   editDialog.value = false;
 }
@@ -220,7 +300,7 @@ function toMin(t) {
 function getCell(day, slotStart, slotEnd) {
   const sStart = toMin(slotStart);
   const sEnd   = toMin(slotEnd);
-  return (props.ctx.state.timetable || []).filter(entry => {
+  return (timetableStore.timetable || []).filter(entry => {
     if (entry.day !== day) return false;
     const eStart = toMin(entry.start);
     const eEnd   = toMin(entry.end);
@@ -229,12 +309,12 @@ function getCell(day, slotStart, slotEnd) {
 }
 
 function subjectColor(subjectId) {
-  const sub = (props.ctx.state.subjects || []).find(s => s.id === subjectId);
+  const sub = (subjectsStore.subjects || []).find(s => s.id === subjectId);
   return sub?.color || '#8C5E43';
 }
 
 function professorName(subjectId) {
-  const sub = (props.ctx.state.subjects || []).find(s => s.id === subjectId);
+  const sub = (subjectsStore.subjects || []).find(s => s.id === subjectId);
   return sub?.professorName || '';
 }
 </script>
@@ -297,5 +377,44 @@ function professorName(subjectId) {
 .cell-chip:hover {
   background: rgba(0, 0, 0, 0.32);
   transform: scale(1.03);
+}
+
+/* Substituindo classes Tailwind removidas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+}
+@media (min-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.stat-card {
+  background: rgba(var(--dark-700), 0.5);
+  border: 1px solid rgba(var(--dark-600), 0.5);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.cell-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-prof {
+  font-size: 10px;
+  line-height: 1.3;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

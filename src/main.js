@@ -1,15 +1,14 @@
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import App from './App.vue';
 import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
-import * as components from 'vuetify/components';
-import * as directives from 'vuetify/directives';
+// components e directives não são importados aqui — vite-plugin-vuetify faz tree-shaking automático
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
+import { router } from './router';
 import './main.css';
 
 const vuetify = createVuetify({
-  components,
-  directives,
   theme: {
     defaultTheme: 'dark',
     themes: {
@@ -52,4 +51,6 @@ const vuetify = createVuetify({
   }
 });
 
-createApp(App).use(vuetify).mount('#app');
+const pinia = createPinia();
+
+createApp(App).use(vuetify).use(pinia).use(router).mount('#app');

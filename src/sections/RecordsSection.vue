@@ -4,25 +4,25 @@
       <h2 class="text-xl font-bold text-primary mb-1">Trabalhos e registros</h2>
       <p class="text-sm text-medium-emphasis mb-5">Editor rico estilo docs para escrever e revisar trabalhos</p>
 
-      <v-form @submit.prevent="ctx.addRecord">
+      <v-form @submit.prevent="submitRecord">
         <v-row>
           <v-col cols="12" md="4">
-            <v-text-field v-model.trim="ctx.recordForm.title" label="Título" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
+            <v-text-field v-model.trim="recordForm.title" label="Título" variant="outlined" density="comfortable" bg-color="transparent" color="primary" required />
           </v-col>
           <v-col cols="12" md="2">
-            <v-select v-model="ctx.recordForm.type" :items="['trabalho', 'prova', 'anotacao']" label="Tipo" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
+            <v-select v-model="recordForm.type" :items="['trabalho', 'prova', 'anotacao']" label="Tipo" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
           </v-col>
           <v-col cols="12" md="3">
-            <v-select v-model="ctx.recordForm.subjectId" :items="ctx.state.subjects" item-title="name" item-value="id" label="Matéria" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
+            <v-select v-model="recordForm.subjectId" :items="subjectsStore.subjects" item-title="name" item-value="id" label="Matéria" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
           </v-col>
           <v-col cols="12" md="3">
-            <v-text-field v-model="ctx.recordForm.dueDate" label="Data limite" type="date" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
+            <v-text-field v-model="recordForm.dueDate" label="Data limite" type="date" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
           </v-col>
           <v-col cols="12" md="3">
-            <v-select v-model="ctx.recordForm.status" :items="['pendente', 'em_andamento', 'concluido']" label="Status" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
+            <v-select v-model="recordForm.status" :items="['pendente', 'em_andamento', 'concluido']" label="Status" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
           </v-col>
           <v-col cols="12" md="3">
-            <v-text-field v-model.number="ctx.recordForm.studyMinutes" label="Minutos estudados" type="number" min="0" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
+            <v-text-field v-model.number="recordForm.studyMinutes" label="Minutos estudados" type="number" min="0" variant="outlined" density="comfortable" bg-color="transparent" color="primary" />
           </v-col>
           <v-col cols="12" md="6" class="flex items-center">
             <p class="text-caption text-medium-emphasis mb-0">
@@ -32,15 +32,15 @@
 
           <v-col cols="12">
             <div class="flex flex-wrap gap-2 mb-3">
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('bold')"><strong>B</strong></v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('italic')"><em>I</em></v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('underline')"><u>U</u></v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('formatBlock', 'H1')">H1</v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('formatBlock', 'H2')">H2</v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('insertUnorderedList')">Lista</v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('insertOrderedList')">Num.</v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="ctx.applyRecordEditorCommand('formatBlock', 'BLOCKQUOTE')">Citação</v-btn>
-              <v-btn size="small" variant="outlined" color="secondary" @click="ctx.applyRecordEditorCommand('removeFormat')">Limpar</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('bold')"><strong>B</strong></v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('italic')"><em>I</em></v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('underline')"><u>U</u></v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('formatBlock', 'H1')">H1</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('formatBlock', 'H2')">H2</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('insertUnorderedList')">Lista</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('insertOrderedList')">Num.</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="applyRecordEditorCommand('formatBlock', 'BLOCKQUOTE')">Citação</v-btn>
+              <v-btn size="small" variant="outlined" color="secondary" @click="applyRecordEditorCommand('removeFormat')">Limpar</v-btn>
             </div>
             <div class="record-editor-shell">
               <div
@@ -49,7 +49,7 @@
                 class="record-editor"
                 contenteditable="true"
                 spellcheck="true"
-                @input="onEditorInput"
+                @input="onEditorFieldInput"
               />
             </div>
           </v-col>
@@ -57,14 +57,14 @@
           <v-col cols="12">
             <div class="flex flex-wrap gap-3 mt-1">
               <v-btn type="submit" color="primary" variant="flat" height="44" class="font-semibold">
-                {{ ctx.recordEditId ? 'Atualizar registro' : 'Criar registro' }}
+                {{ recordEditId ? 'Atualizar registro' : 'Criar registro' }}
               </v-btn>
               <v-btn
-                v-if="ctx.recordEditId"
+                v-if="recordEditId"
                 color="secondary"
                 variant="outlined"
                 height="44"
-                @click="ctx.cancelRecordEdit"
+                @click="cancelRecordEdit"
               >
                 Cancelar edição
               </v-btn>
@@ -75,11 +75,11 @@
     </div>
 
     <v-row>
-      <v-col v-for="record in ctx.orderedRecords" :key="record.id" cols="12" lg="6">
+      <v-col v-for="record in recordsStore.orderedRecords" :key="record.id" cols="12" lg="6">
         <div class="glass-card p-5" style="height: 100%">
           <h3 class="text-base font-bold text-high-emphasis mb-2">{{ record.title }}</h3>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Matéria</span> {{ ctx.subjectName(record.subjectId) }}</p>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Data limite</span> {{ ctx.formatDate(record.dueDate) }}</p>
+          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Matéria</span> {{ subjectNameFormatter(record.subjectId) }}</p>
+          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Data limite</span> {{ dateFormatter(record.dueDate) }}</p>
           <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Status</span> {{ record.status }}</p>
           <p class="text-sm text-medium-emphasis mb-3"><span class="font-semibold text-high-emphasis">Minutos</span> {{ record.studyMinutes || 0 }}</p>
 
@@ -98,10 +98,10 @@
           </v-row>
 
           <div class="flex flex-wrap gap-2 mt-4">
-            <v-btn size="small" color="primary" variant="outlined" @click="ctx.startRecordEdit(record.id)">Editar</v-btn>
-            <v-btn size="small" color="primary" variant="outlined" @click="ctx.exportRecord(record)">Exportar</v-btn>
-            <v-btn size="small" color="secondary" variant="outlined" @click="ctx.sendRecordEmail(record)">Enviar e-mail</v-btn>
-            <v-btn size="small" color="error" variant="outlined" @click="ctx.removeRecord(record.id)">Remover</v-btn>
+            <v-btn size="small" color="primary" variant="outlined" @click="startRecordEdit(record.id)">Editar</v-btn>
+            <v-btn size="small" color="primary" variant="outlined" @click="handleExportRecord(record)">Exportar</v-btn>
+            <v-btn size="small" color="secondary" variant="outlined" @click="handleSendRecordEmail(record)">Enviar e-mail</v-btn>
+            <v-btn size="small" color="error" variant="outlined" @click="removeRecord(record.id)">Remover</v-btn>
           </div>
         </div>
       </v-col>
@@ -111,47 +111,139 @@
 
 <script setup>
 import { nextTick, onMounted, ref, watch } from 'vue';
+import { useRecordsStore } from '../stores/useRecordsStore';
+import { useSubjectsStore } from '../stores/useSubjectsStore';
+import { useSyncStore } from '../stores/useSyncStore';
+import { useAppStore } from '../stores/useAppStore';
+import { uid, createRecordForm } from '../utils/helpers';
+import { exportRecord, sendRecordEmail } from '../utils/exportRecord';
 
-const props = defineProps({
-  ctx: {
-    type: Object,
-    required: true
-  }
-});
+const recordsStore = useRecordsStore();
+const subjectsStore = useSubjectsStore();
+const syncStore = useSyncStore();
+const appStore = useAppStore();
 
 const editorRef = ref(null);
+
+const recordForm = ref(createRecordForm());
+const recordEditId = ref('');
+const recordEditorHtml = ref('<p></p>');
+
+const resetRecordForm = () => {
+  recordForm.value = createRecordForm();
+  recordEditId.value = '';
+  recordEditorHtml.value = '<p></p>';
+  if (editorRef.value) editorRef.value.innerHTML = '<p></p>';
+};
+
+const submitRecord = () => {
+  if (!recordForm.value.title) {
+    appStore.showToast('Insira o título do registro.');
+    return;
+  }
+  const isUpdate = !!recordEditId.value;
+  const targetId = isUpdate ? recordEditId.value : uid();
+
+  const recordData = {
+    ...recordForm.value,
+    id: targetId,
+    contentHtml: recordEditorHtml.value,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (!isUpdate) {
+    recordData.createdAt = recordData.updatedAt;
+    recordsStore.records.push(recordData);
+    appStore.showToast(`Registro criado: ${recordData.title}`);
+  } else {
+    const idx = recordsStore.records.findIndex((r) => r.id === targetId);
+    if (idx !== -1) {
+      Object.assign(recordsStore.records[idx], recordData);
+      appStore.showToast(`Registro atualizado: ${recordData.title}`);
+    }
+  }
+
+  syncStore.persistState();
+  resetRecordForm();
+};
+
+const startRecordEdit = (id) => {
+  const item = recordsStore.records.find((r) => r.id === id);
+  if (!item) return;
+  recordEditId.value = item.id;
+  recordForm.value = createRecordForm({
+    title: item.title,
+    type: item.type,
+    subjectId: item.subjectId,
+    dueDate: item.dueDate,
+    status: item.status,
+    studyMinutes: item.studyMinutes
+  });
+  recordEditorHtml.value = item.contentHtml || '<p></p>';
+  if (editorRef.value) editorRef.value.innerHTML = recordEditorHtml.value;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  appStore.showToast(`Editando: ${item.title}`);
+};
+
+const cancelRecordEdit = () => {
+  resetRecordForm();
+  appStore.showToast('Edição de registro cancelada.');
+};
+
+const removeRecord = (id) => {
+  recordsStore.records = recordsStore.records.filter((r) => r.id !== id);
+  syncStore.persistState();
+  if (recordEditId.value === id) resetRecordForm();
+};
+
+const onRecordEditorInput = (html) => {
+  recordEditorHtml.value = html;
+};
+
+const onEditorFieldInput = (event) => {
+  onRecordEditorInput(event.target.innerHTML);
+};
+
+const applyRecordEditorCommand = (command, value = null) => {
+  document.execCommand(command, false, value);
+  const editor = document.getElementById('record-rich-editor');
+  if (editor) {
+    editor.focus();
+    onRecordEditorInput(editor.innerHTML);
+  }
+};
+
+const subjectNameFormatter = (id) => subjectsStore.subjects.find((s) => s.id === id)?.name || 'Sem matéria';
+const dateFormatter = (isoStr) => {
+  if (!isoStr) return '';
+  const d = new Date(isoStr + 'T00:00:00');
+  return !isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR') : isoStr;
+};
+
+const handleExportRecord = (record) => exportRecord(record, subjectNameFormatter, dateFormatter, appStore.showToast);
+const handleSendRecordEmail = (record) => sendRecordEmail(record, subjectNameFormatter, dateFormatter, appStore.showToast);
 
 function syncEditorFromState() {
   const editor = editorRef.value;
   if (!editor) return;
-  const desired = props.ctx.recordEditorHtml || '<p></p>';
+  const desired = recordEditorHtml.value || '<p></p>';
   if (editor.innerHTML !== desired) {
     editor.innerHTML = desired;
   }
-}
-
-function onEditorInput(event) {
-  props.ctx.onRecordEditorInput(event.target.innerHTML);
 }
 
 onMounted(() => {
   syncEditorFromState();
 });
 
-watch(
-  () => props.ctx.recordEditId,
-  () => {
-    nextTick(() => syncEditorFromState());
-  }
-);
+watch(recordEditId, () => {
+  nextTick(() => syncEditorFromState());
+});
 
-watch(
-  () => props.ctx.recordEditorHtml,
-  () => {
-    if (document.activeElement === editorRef.value) return;
-    nextTick(() => syncEditorFromState());
-  }
-);
+watch(recordEditorHtml, () => {
+  if (document.activeElement === editorRef.value) return;
+  nextTick(() => syncEditorFromState());
+});
 </script>
 
 <style scoped>

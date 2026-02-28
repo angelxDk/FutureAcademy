@@ -1,42 +1,37 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import vuetify from 'vite-plugin-vuetify';
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    // Tree-shaking automático: só inclui no bundle os componentes Vuetify usados nos templates
+    vuetify({ autoImport: true })
+  ],
 
-  // Pré-bundling de deps pesadas — evita centenas de requests separados no dev
+  // Pré-bundling de deps pesadas no dev — evita centenas de requests separados
+  /*
   optimizeDeps: {
     include: [
       'vue',
-      'vuetify',
       'firebase/app',
       'firebase/auth',
       'firebase/firestore',
       'gsap'
     ]
   },
+  */
 
   build: {
-    // Dividir vendors em chunks separados → melhor cache em produção
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-vue':      ['vue', 'vuetify'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'vendor-gsap':     ['gsap']
-        }
-      }
-    }
+    // Vite lida bem com a fragmentação automática
   },
 
   server: {
     port: 5173,
-    // Pré-aquecer os módulos mais usados no dev
     warmup: {
       clientFiles: [
         './src/main.js',
-        './src/App.vue',
-        './src/appOptions.js'
+        './src/App.vue'
       ]
     },
     proxy: {
