@@ -37,6 +37,7 @@ export const useSyncStore = defineStore('sync', {
         _currentUid: '',
         _persistTimeout: null,
         _reminderDebounce: null,
+        _isHydrated: false,
         reminderTimeouts: []
     }),
     actions: {
@@ -51,21 +52,21 @@ export const useSyncStore = defineStore('sync', {
             const pomodoroStore = usePomodoroStore();
             const communitiesStore = useCommunitiesStore();
 
-            // Faster than JSON.stringify/parse for deeply nested objects
+            // Faster than JSON.stringify/parse and robust against uninitialized state
             return {
-                settings: { ...userStore.settings, integrations: { ...userStore.settings.integrations } },
-                profile: { ...userStore.profile },
+                settings: userStore.settings ? { ...userStore.settings, integrations: { ...userStore.settings.integrations } } : null,
+                profile: userStore.profile ? { ...userStore.profile } : null,
                 focusPlayer: {
-                    visible: appStore.focusPlayer.visible,
-                    collapsed: appStore.focusPlayer.collapsed
+                    visible: !!appStore.focusPlayer?.visible,
+                    collapsed: !!appStore.focusPlayer?.collapsed
                 },
-                subjects: subjectsStore.subjects.map(s => ({ ...s })),
-                timetable: timetableStore.timetable.map(t => ({ ...t })),
-                events: agendaStore.events.map(e => ({ ...e })),
-                records: recordsStore.records.map(r => ({ ...r })),
-                studySessions: pomodoroStore.studySessions.map(s => ({ ...s })),
-                communities: communitiesStore.communities.map(c => ({ ...c })),
-                pomodoro: { ...pomodoroStore.pomodoro }
+                subjects: (subjectsStore.subjects || []).map(s => ({ ...s })),
+                timetable: (timetableStore.timetable || []).map(t => ({ ...t })),
+                events: (agendaStore.events || []).map(e => ({ ...e })),
+                records: (recordsStore.records || []).map(r => ({ ...r })),
+                studySessions: (pomodoroStore.studySessions || []).map(s => ({ ...s })),
+                communities: (communitiesStore.communities || []).map(c => ({ ...c })),
+                pomodoro: pomodoroStore.pomodoro ? { ...pomodoroStore.pomodoro } : null
             };
         },
 
@@ -105,6 +106,7 @@ export const useSyncStore = defineStore('sync', {
         resetToDefault() {
             this.hydrateStores(defaultStateSnapshot());
             this._currentUid = '';
+            this._isHydrated = false;
             this.clearReminderTimeouts();
             if (this._reminderDebounce) clearTimeout(this._reminderDebounce);
             usePomodoroStore().pausePomodoro();
@@ -113,7 +115,9 @@ export const useSyncStore = defineStore('sync', {
         // 4. Load from DB/LS and Hydrate
         async loadStateFromFirestore(uid) {
             if (!uid) return;
+            this._isHydrated = false;
             this._currentUid = uid;
+
             const lsFallback = () => {
                 try {
                     const lsRaw = localStorage.getItem(LS_KEY(uid));
@@ -128,6 +132,7 @@ export const useSyncStore = defineStore('sync', {
                 this.hydrateStores(lsFallback());
             }
 
+            this._isHydrated = true;
             usePomodoroStore().resetPomodoro();
             this.scheduleReminders();
         },
@@ -135,9 +140,11 @@ export const useSyncStore = defineStore('sync', {
         // 5. Save changes from any domain store
         persistState() {
             this.scheduleReminders();
+            // Prevent overwriting data during the gap between login and hydration
+            if (!this._isHydrated || !this._currentUid) return;
+
             if (this._persistTimeout) clearTimeout(this._persistTimeout);
             this._persistTimeout = setTimeout(async () => {
-                if (!this._currentUid) return;
                 const snapshot = this.captureState();
                 try { localStorage.setItem(LS_KEY(this._currentUid), JSON.stringify(snapshot)); } catch { }
                 try { await saveUserData(this._currentUid, snapshot); } catch { }
@@ -145,14 +152,14 @@ export const useSyncStore = defineStore('sync', {
         },
 
         flushPersist() {
+            if (!this._isHydrated || !this._currentUid) return;
+
             if (this._persistTimeout) {
                 clearTimeout(this._persistTimeout);
                 this._persistTimeout = null;
-                if (this._currentUid) {
-                    const snapshot = this.captureState();
-                    try { localStorage.setItem(LS_KEY(this._currentUid), JSON.stringify(snapshot)); } catch { }
-                    saveUserData(this._currentUid, snapshot).catch(() => { });
-                }
+                const snapshot = this.captureState();
+                try { localStorage.setItem(LS_KEY(this._currentUid), JSON.stringify(snapshot)); } catch { }
+                saveUserData(this._currentUid, snapshot).catch(() => { });
             }
         },
 
