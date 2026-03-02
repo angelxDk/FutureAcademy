@@ -36,10 +36,11 @@ export const useSyncStore = defineStore('sync', {
     state: () => ({
         _currentUid: '',
         _persistTimeout: null,
+        _reminderDebounce: null,
         reminderTimeouts: []
     }),
     actions: {
-        // 1. Gather fragmented stores into a single object representation identical to the old format
+        // 1. Gather fragmented stores into a single object representation efficiently
         captureState() {
             const userStore = useUserStore();
             const appStore = useAppStore();
@@ -50,20 +51,21 @@ export const useSyncStore = defineStore('sync', {
             const pomodoroStore = usePomodoroStore();
             const communitiesStore = useCommunitiesStore();
 
+            // Faster than JSON.stringify/parse for deeply nested objects
             return {
-                settings: JSON.parse(JSON.stringify(userStore.settings)),
-                profile: JSON.parse(JSON.stringify(userStore.profile)),
+                settings: { ...userStore.settings, integrations: { ...userStore.settings.integrations } },
+                profile: { ...userStore.profile },
                 focusPlayer: {
                     visible: appStore.focusPlayer.visible,
                     collapsed: appStore.focusPlayer.collapsed
                 },
-                subjects: JSON.parse(JSON.stringify(subjectsStore.subjects)),
-                timetable: JSON.parse(JSON.stringify(timetableStore.timetable)),
-                events: JSON.parse(JSON.stringify(agendaStore.events)),
-                records: JSON.parse(JSON.stringify(recordsStore.records)),
-                studySessions: JSON.parse(JSON.stringify(pomodoroStore.studySessions)),
-                communities: JSON.parse(JSON.stringify(communitiesStore.communities)),
-                pomodoro: JSON.parse(JSON.stringify(pomodoroStore.pomodoro))
+                subjects: subjectsStore.subjects.map(s => ({ ...s })),
+                timetable: timetableStore.timetable.map(t => ({ ...t })),
+                events: agendaStore.events.map(e => ({ ...e })),
+                records: recordsStore.records.map(r => ({ ...r })),
+                studySessions: pomodoroStore.studySessions.map(s => ({ ...s })),
+                communities: communitiesStore.communities.map(c => ({ ...c })),
+                pomodoro: { ...pomodoroStore.pomodoro }
             };
         },
 
@@ -104,6 +106,7 @@ export const useSyncStore = defineStore('sync', {
             this.hydrateStores(defaultStateSnapshot());
             this._currentUid = '';
             this.clearReminderTimeouts();
+            if (this._reminderDebounce) clearTimeout(this._reminderDebounce);
             usePomodoroStore().pausePomodoro();
         },
 
@@ -200,7 +203,16 @@ export const useSyncStore = defineStore('sync', {
             }
             return next;
         },
+
+        // Debounced reminder scheduling to avoid blocking UI during input/save
         scheduleReminders() {
+            if (this._reminderDebounce) clearTimeout(this._reminderDebounce);
+            this._reminderDebounce = setTimeout(() => {
+                this._executeScheduleReminders();
+            }, 300);
+        },
+
+        _executeScheduleReminders() {
             this.clearReminderTimeouts();
             const userStore = useUserStore();
             if (!userStore.settings.notificationsEnabled) return;
