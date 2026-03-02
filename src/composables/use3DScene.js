@@ -7,7 +7,6 @@ export function use3DScene(appStore) {
     let _threeAnimationId = null;
     let _threeParticles = null;
     let _threeIcos = null;
-    let _threeBaseParticleY = null;
     let _threePointer = { x: 0, y: 0 };
     let _threePointerTarget = { x: 0, y: 0 };
     let _threeResizeHandler = null;
@@ -37,15 +36,9 @@ export function use3DScene(appStore) {
             _threeParticles.rotation.y = time * 0.08 * pulse;
             _threeParticles.rotation.x = Math.sin(time * 0.32) * 0.14;
 
-            const positions = _threeParticles.geometry.attributes.position;
-            if (positions && _threeBaseParticleY) {
-                for (let i = 0; i < positions.count; i++) {
-                    const x = positions.array[i * 3];
-                    const offset = Math.sin(time * pulse + i * 0.13 + x * 0.35) * 0.04 * modeScale;
-                    positions.array[i * 3 + 1] = _threeBaseParticleY[i] + offset;
-                }
-                positions.needsUpdate = true;
-            }
+            _threeParticles.material.uniforms.uTime.value = time;
+            _threeParticles.material.uniforms.uPulse.value = pulse;
+            _threeParticles.material.uniforms.uModeScale.value = modeScale;
         }
 
         if (_threeIcos) {
@@ -83,7 +76,7 @@ export function use3DScene(appStore) {
         const particleCount = 420;
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
-        _threeBaseParticleY = new Float32Array(particleCount);
+        const baseIndices = new Float32Array(particleCount);
 
         const goldColors = [
             [0.95, 0.77, 0.41],
@@ -100,7 +93,7 @@ export function use3DScene(appStore) {
             positions[i * 3] = x;
             positions[i * 3 + 1] = y;
             positions[i * 3 + 2] = z;
-            _threeBaseParticleY[i] = y;
+            baseIndices[i] = i;
 
             const color = goldColors[Math.floor(Math.random() * goldColors.length)];
             colors[i * 3] = color[0];
@@ -111,15 +104,46 @@ export function use3DScene(appStore) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('aIndex', new THREE.BufferAttribute(baseIndices, 1));
 
-        const material = new THREE.PointsMaterial({
-            size: 0.055,
-            vertexColors: true,
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uPulse: { value: 1.0 },
+                uModeScale: { value: 1.0 },
+                uPointSize: { value: 0.055 * (window.devicePixelRatio || 1) }
+            },
+            vertexShader: `
+                attribute float aIndex;
+                varying vec3 vColor;
+                uniform float uTime;
+                uniform float uPulse;
+                uniform float uModeScale;
+                uniform float uPointSize;
+
+                void main() {
+                    vColor = color;
+                    vec3 pos = position;
+                    float offset = sin(uTime * uPulse + aIndex * 0.13 + pos.x * 0.35) * 0.04 * uModeScale;
+                    pos.y += offset;
+
+                    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                    gl_PointSize = uPointSize * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                varying vec3 vColor;
+                void main() {
+                    float dist = distance(gl_PointCoord, vec2(0.5));
+                    if (dist > 0.5) discard;
+                    gl_FragColor = vec4(vColor, 0.62);
+                }
+            `,
             transparent: true,
-            opacity: 0.62,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
-            sizeAttenuation: true
+            vertexColors: true
         });
 
         const particles = new THREE.Points(geometry, material);
@@ -183,6 +207,9 @@ export function use3DScene(appStore) {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            if (_threeParticles && _threeParticles.material.uniforms) {
+                _threeParticles.material.uniforms.uPointSize.value = 0.055 * (window.devicePixelRatio || 1);
+            }
         };
         window.addEventListener('resize', _threeResizeHandler);
 
@@ -251,7 +278,6 @@ export function use3DScene(appStore) {
         _threeScene = null;
         _threeCamera = null;
         _threeIcos = null;
-        _threeBaseParticleY = null;
         _threePointer = { x: 0, y: 0 };
         _threePointerTarget = { x: 0, y: 0 };
     };
