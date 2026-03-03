@@ -10,17 +10,19 @@ export default defineConfig({
   ],
 
   // Pré-bundling de deps pesadas no dev — evita centenas de requests separados
-  /*
   optimizeDeps: {
     include: [
       'vue',
+      'vue-router',
+      'pinia',
       'firebase/app',
       'firebase/auth',
       'firebase/firestore',
       'gsap'
-    ]
+    ],
+    // Não pré-bundilar libs de lazy load (anularia o Problema #5)
+    exclude: ['pdf.js', 'mammoth']
   },
-  */
 
   build: {
     // Vite lida bem com a fragmentação automática

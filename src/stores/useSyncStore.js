@@ -65,7 +65,7 @@ export const useSyncStore = defineStore('sync', {
                 events: (agendaStore.events || []).map(e => ({ ...e })),
                 records: (recordsStore.records || []).map(r => ({ ...r })),
                 studySessions: (pomodoroStore.studySessions || []).map(s => ({ ...s })),
-                communities: (communitiesStore.communities || []).map(c => ({ ...c })),
+                communities: (communitiesStore.communities || []).map(c => structuredClone(c)),
                 pomodoro: pomodoroStore.pomodoro ? { ...pomodoroStore.pomodoro } : null
             };
         },
