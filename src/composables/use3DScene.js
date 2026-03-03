@@ -14,9 +14,11 @@ export function use3DScene(appStore) {
     let _threePointerLeaveHandler = null;
     let _threePointerDownHandler = null;
     let _threeBurstUntil = 0;
+    let _threePaused = false;
 
     const animate3D = () => {
         if (!_threeRenderer || !_threeScene || !_threeCamera) return;
+        if (_threePaused) { _threeAnimationId = null; return; } // yield GPU while user types
         _threeAnimationId = requestAnimationFrame(animate3D);
 
         const now = performance.now();
@@ -287,8 +289,25 @@ export function use3DScene(appStore) {
         _threePointerTarget = { x: 0, y: 0 };
     };
 
+    const pauseCanvas = () => {
+        if (_threePaused) return;
+        _threePaused = true;
+        if (_threeAnimationId) {
+            cancelAnimationFrame(_threeAnimationId);
+            _threeAnimationId = null;
+        }
+    };
+
+    const resumeCanvas = () => {
+        if (!_threePaused) return;
+        _threePaused = false;
+        if (_threeRenderer && !_threeAnimationId) animate3D();
+    };
+
     return {
         init3DScene,
-        destroy3DScene
+        destroy3DScene,
+        pauseCanvas,
+        resumeCanvas
     };
 }

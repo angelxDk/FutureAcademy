@@ -274,7 +274,7 @@ const sectionContent = ref(null);
 // Vue Router handled dynamically through 'router-view' components.
 
 // -- 3D Scene --
-const { init3DScene, destroy3DScene } = use3DScene(appStore);
+const { init3DScene, destroy3DScene, pauseCanvas, resumeCanvas } = use3DScene(appStore);
 
 // -- Nav Items --
 const navItems = [
@@ -379,6 +379,9 @@ const activeFocusPlaylist = computed(() => {
 
 
 // -- Lifecycle --
+let _canvasFocusIn = null;
+let _canvasFocusOut = null;
+
 onMounted(() => {
   authStore.initAuth();
   animateSectionIn();
@@ -395,11 +398,19 @@ onMounted(() => {
       init3DScene();
     }
   }, { immediate: true });
+
+  // Pausar canvas 3D enquanto o usuário digita (libera GPU/compositor)
+  _canvasFocusIn = (e) => { if (e.target.matches('input, textarea, [contenteditable]')) pauseCanvas(); };
+  _canvasFocusOut = () => resumeCanvas();
+  document.addEventListener('focusin', _canvasFocusIn);
+  document.addEventListener('focusout', _canvasFocusOut);
 });
 
 onBeforeUnmount(() => {
   authStore.cleanup();
   destroy3DScene();
+  if (_canvasFocusIn) document.removeEventListener('focusin', _canvasFocusIn);
+  if (_canvasFocusOut) document.removeEventListener('focusout', _canvasFocusOut);
 });
 </script>
 

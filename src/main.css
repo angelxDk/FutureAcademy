@@ -62,15 +62,31 @@ body {
 
 /* ── Glassmorphism Card ── */
 .glass-card {
-  background: var(--surface);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  background: transparent;
   border: 1px solid var(--surface-border);
   box-shadow: var(--glass-shadow);
   border-radius: 16px;
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.3s ease;
+  contain: layout;
+}
+
+/* Pseudo-elemento isolado em seu próprio layer de GPU.
+   O compositor não re-rasteriza o canvas 3D a cada frame —
+   o blur fica congelado no layer e só é atualizado quando
+   o card se move/aparece, e não a cada tick da animação. */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Promove a um layer de GPU próprio */
   will-change: transform;
-  contain: content;
+  transition: background 0.3s ease;
 }
 
 /* ── Utilitários de layout ── */
