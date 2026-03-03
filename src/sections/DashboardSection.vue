@@ -1,6 +1,38 @@
 <template>
   <section class="grid gap-6">
 
+    <!-- Skeleton: exibido enquanto os dados do Firestore não chegaram -->
+    <template v-if="authStore.dataLoading">
+      <div class="glass-card p-6">
+        <div class="mb-4">
+          <h2 class="text-xl font-bold text-primary">Painel</h2>
+          <p class="text-sm text-medium-emphasis">Carregando seus dados...</p>
+        </div>
+        <div class="stats-grid mt-4">
+          <v-skeleton-loader
+            v-for="n in 4" :key="n"
+            type="card"
+            class="stat-card"
+            style="background: transparent; border-radius: 12px;"
+          />
+        </div>
+      </div>
+
+      <div class="glass-card p-6">
+        <div class="px-0 pt-0 pb-3">
+          <p class="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Grade Semanal</p>
+        </div>
+        <v-skeleton-loader type="table" style="background: transparent;" />
+      </div>
+
+      <div class="glass-card p-6">
+        <v-skeleton-loader type="sentences" style="background: transparent;" />
+      </div>
+    </template>
+
+    <!-- Conteúdo real: exibido após hydratação completa -->
+    <template v-else>
+
     <!-- Stats cards -->
     <div class="glass-card p-6">
       <div class="mb-4">
@@ -100,6 +132,7 @@
       </v-form>
     </div>
 
+    </template>
   </section>
 
   <!-- Edit Timetable Dialog -->
@@ -173,6 +206,7 @@
 <script setup>
 defineOptions({ name: 'DashboardSection' });
 import { ref, computed } from 'vue';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
 import { useTimetableStore } from '../stores/useTimetableStore';
 import { useAgendaStore } from '../stores/useAgendaStore';
@@ -191,6 +225,7 @@ const recordsStore = useRecordsStore();
 const pomodoroStore = usePomodoroStore();
 const syncStore = useSyncStore();
 const appStore = useAppStore();
+const authStore = useAuthStore();
 
 const editDialog = ref(false);
 const editEntry = ref(null);

@@ -19,7 +19,8 @@ import { FIREBASE_ERROR_MESSAGES } from '../utils/constants';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         authUser: null,
-        authLoading: true,
+        authLoading: true,  // layout/nav — resolve em ~50ms (token em cache)
+        dataLoading: false, // conteúdo de dados — resolve após hydratação do Firestore
         authEmail: '',
         authPassword: '',
         _currentUid: '',
@@ -43,14 +44,22 @@ export const useAuthStore = defineStore('auth', {
 
                     const theme = userStore.settings?.theme === 'light' ? 'light' : 'dark';
                     document.documentElement.setAttribute('data-theme', theme);
+
+                    // Layout e nav aparecem imediatamente — auth já confirmada
                     this.authLoading = false;
 
-                    syncStore.loadStateFromFirestore(firebaseUser.uid).catch(() => { });
+                    // Dados aguardam a hidratação — conteúdo exibe skeleton enquanto isso
+                    this.dataLoading = true;
+                    try {
+                        await syncStore.loadStateFromFirestore(firebaseUser.uid);
+                    } catch { /* silencioso — loadStateFromFirestore tem fallback interno */ }
+                    this.dataLoading = false;
                 } else {
                     this.authUser = null;
                     this._currentUid = '';
                     syncStore.resetToDefault();
                     this.authLoading = false;
+                    this.dataLoading = false;
                 }
             });
         },
