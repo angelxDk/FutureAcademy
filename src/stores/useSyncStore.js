@@ -18,6 +18,7 @@ const LS_KEY = (uid) => `fa_state_${uid}`;
 
 function defaultStateSnapshot() {
     return {
+        savedAt: 0,
         settings: { theme: 'dark', notificationsEnabled: false, integrations: { openAiModel: 'gpt-4o-mini' } },
         profile: { name: '', email: '', course: '', photo: '' },
         focusPlayer: { visible: true, collapsed: false },
@@ -54,6 +55,7 @@ export const useSyncStore = defineStore('sync', {
 
             // Faster than JSON.stringify/parse and robust against uninitialized state
             return {
+                savedAt: Date.now(), // timestamp de conflito para stale-while-revalidate
                 settings: userStore.settings ? { ...userStore.settings, integrations: { ...userStore.settings.integrations } } : null,
                 profile: userStore.profile ? { ...userStore.profile } : null,
                 focusPlayer: {
@@ -124,15 +126,38 @@ export const useSyncStore = defineStore('sync', {
             const lsFallback = () => {
                 try {
                     const lsRaw = localStorage.getItem(LS_KEY(uid));
-                    return lsRaw ? JSON.parse(lsRaw) : defaultStateSnapshot();
-                } catch { return defaultStateSnapshot(); }
+                    return lsRaw ? JSON.parse(lsRaw) : null;
+                } catch { return null; }
             };
 
+            // ── Fase 1: render instantâneo com cache do localStorage ──
+            // O usuário vê os dados em ~0ms enquanto o Firestore ainda carrega.
+            const cached = lsFallback();
+            if (cached && (cached.timetable?.length || cached.subjects?.length)) {
+                this.hydrateStores(cached);
+                this._isHydrated = true;
+            }
+
+            // ── Fase 2: busca Firestore em background ──
+            let raw = null;
             try {
-                const raw = await loadUserData(uid);
-                this.hydrateStores(raw || lsFallback());
+                raw = await loadUserData(uid);
             } catch {
-                this.hydrateStores(lsFallback());
+                // Firestore indisponível — mantém dados do LS já hidratados
+            }
+
+            if (raw) {
+                // ── Fase 3: só sobrescreve se Firestore tiver dados mais recentes ──
+                // Protege edições feitas offline (LS mais novo que Firestore)
+                const cachedAt = cached?.savedAt ?? 0;
+                const firestoreAt = raw?.savedAt ?? Infinity;
+
+                if (firestoreAt >= cachedAt) {
+                    this.hydrateStores(raw);
+                }
+            } else if (!this._isHydrated) {
+                // Nenhuma fonte disponível — inicializa com defaults
+                this.hydrateStores(defaultStateSnapshot());
             }
 
             this._isHydrated = true;
