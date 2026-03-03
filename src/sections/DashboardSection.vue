@@ -3,6 +3,8 @@
 
     <!-- Skeleton: exibido enquanto os dados do Firestore não chegaram -->
     <template v-if="authStore.dataLoading">
+
+      <!-- Stats cards — mesma altura do .stat-card real (80px) -->
       <div class="glass-card p-6">
         <div class="mb-4">
           <h2 class="text-xl font-bold text-primary">Painel</h2>
@@ -11,23 +13,33 @@
         <div class="stats-grid mt-4">
           <v-skeleton-loader
             v-for="n in 4" :key="n"
-            type="card"
+            type="list-item-two-line"
             class="stat-card"
-            style="background: transparent; border-radius: 12px;"
+            style="background: transparent; height: 80px; border-radius: 12px;"
           />
         </div>
       </div>
 
-      <div class="glass-card p-6">
-        <div class="px-0 pt-0 pb-3">
-          <p class="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Grade Semanal</p>
+      <!-- Grade semanal — altura exata: timeSlots.length * 52px por linha + 48px de header -->
+      <div class="glass-card overflow-hidden">
+        <div class="px-6 pt-5 pb-3">
+          <p class="text-sm font-semibold text-primary uppercase tracking-wider">Grade Semanal</p>
         </div>
-        <v-skeleton-loader type="table" style="background: transparent;" />
+        <v-skeleton-loader
+          :type="`table-row-divider@${timeSlots.length}`"
+          :height="expectedTableHeight"
+          style="background: transparent;"
+        />
       </div>
 
-      <div class="glass-card p-6">
-        <v-skeleton-loader type="sentences" style="background: transparent;" />
+      <!-- Formulário rápido — altura igual ao form real (44px btn + inputs) -->
+      <div class="glass-card p-6" style="min-height: 100px;">
+        <v-skeleton-loader
+          type="button-avatar-text@2"
+          style="background: transparent;"
+        />
       </div>
+
     </template>
 
     <!-- Conteúdo real: exibido após hydratação completa -->
@@ -327,6 +339,10 @@ const timeSlots = [
   { start: '21:40', end: '22:30' },
   { start: '22:30', end: '23:20' }
 ];
+
+// Altura fixa do skeleton da grade = mesma da tabela real → sem CLS
+// 52px por linha (td height) + 48px do header (thead)
+const expectedTableHeight = computed(() => timeSlots.length * 52 + 48);
 
 function toMin(t) {
   const [h, m] = t.split(':').map(Number);
