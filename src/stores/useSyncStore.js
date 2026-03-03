@@ -36,7 +36,7 @@ export const useSyncStore = defineStore('sync', {
     state: () => ({
         _currentUid: '',
         _persistTimeout: null,
-        _reminderDebounce: null,
+        _reminderDebounceTimer: null,
         _isHydrated: false,
         reminderTimeouts: []
     }),
@@ -108,7 +108,10 @@ export const useSyncStore = defineStore('sync', {
             this._currentUid = '';
             this._isHydrated = false;
             this.clearReminderTimeouts();
-            if (this._reminderDebounce) clearTimeout(this._reminderDebounce);
+            if (this._reminderDebounceTimer) {
+                clearTimeout(this._reminderDebounceTimer);
+                this._reminderDebounceTimer = null;
+            }
             usePomodoroStore().pausePomodoro();
         },
 
@@ -139,10 +142,19 @@ export const useSyncStore = defineStore('sync', {
 
         // 5. Save changes from any domain store
         persistState() {
-            this.scheduleReminders();
-            // Prevent overwriting data during the gap between login and hydration
+            // Guard: never save while data hasn't loaded yet
             if (!this._isHydrated || !this._currentUid) return;
 
+            // --- Debounce #1 (300ms): Reminder scheduling ---
+            // Reminders are cheap to schedule but must stay responsive.
+            // Running more often than 300ms is wasteful (user still typing).
+            if (this._reminderDebounceTimer) clearTimeout(this._reminderDebounceTimer);
+            this._reminderDebounceTimer = setTimeout(() => {
+                this._executeScheduleReminders();
+            }, 300);
+
+            // --- Debounce #2 (1500ms): Firebase + LocalStorage save ---
+            // Longer window avoids hammering Firestore on every keystroke.
             if (this._persistTimeout) clearTimeout(this._persistTimeout);
             this._persistTimeout = setTimeout(async () => {
                 const snapshot = this.captureState();
@@ -211,10 +223,10 @@ export const useSyncStore = defineStore('sync', {
             return next;
         },
 
-        // Debounced reminder scheduling to avoid blocking UI during input/save
+        // Reminder scheduling (raw, non-debounced — called by _executeScheduleReminders and loadStateFromFirestore)
         scheduleReminders() {
-            if (this._reminderDebounce) clearTimeout(this._reminderDebounce);
-            this._reminderDebounce = setTimeout(() => {
+            if (this._reminderDebounceTimer) clearTimeout(this._reminderDebounceTimer);
+            this._reminderDebounceTimer = setTimeout(() => {
                 this._executeScheduleReminders();
             }, 300);
         },
