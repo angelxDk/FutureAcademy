@@ -195,16 +195,20 @@ import { ref } from 'vue';
 import { useTimetableStore } from '../stores/useTimetableStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
 import { useUserStore } from '../stores/useUserStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { useAppStore } from '../stores/useAppStore';
 import { DAY_OPTIONS } from '../utils/constants';
 import { uid, createTimetableForm, createSubjectForm } from '../utils/helpers';
+import { lazyLoadScript } from '../utils/lazyLoadScript';
+import { useDebouncedPersist } from '../composables/useDebouncedPersist';
+
+const PDF_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const MAMMOTH_URL = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';
 
 const timetableStore = useTimetableStore();
 const subjectsStore = useSubjectsStore();
 const userStore = useUserStore();
-const syncStore = useSyncStore();
 const appStore = useAppStore();
+const persist = useDebouncedPersist(500);
 
 const fileInput = ref(null);
 
@@ -219,7 +223,7 @@ const resetTimetableForm = () => {
 const submitTimetable = () => {
   const success = timetableStore.addTimetable(timetableForm.value, timetableEditId.value);
   if (success) resetTimetableForm();
-  syncStore.persistState();
+  persist();
 };
 
 const startTimetableEdit = (id) => {
@@ -244,7 +248,7 @@ const cancelTimetableEdit = () => {
 
 const removeTimetable = (id) => {
   timetableStore.removeTimetable(id);
-  syncStore.persistState();
+  persist();
   if (timetableEditId.value === id) resetTimetableForm();
 };
 
@@ -397,7 +401,7 @@ const onTimetableFileImport = async (event) => {
   event.target.value = '';
 
   timetableImport.value.busy = true;
-  timetableImport.value.status = 'Lendo arquivo...';
+  timetableImport.value.status = 'Carregando bibliotecas...';
   timetableImport.value.parsed = [];
 
   try {
@@ -405,9 +409,11 @@ const onTimetableFileImport = async (event) => {
     let payload;
 
     if (ext === 'pdf') {
+      await lazyLoadScript(PDF_JS_URL);
       timetableImport.value.status = 'Extraindo dados do PDF...';
       payload = await extractStructuredFromPdf(file);
     } else if (ext === 'docx') {
+      await lazyLoadScript(MAMMOTH_URL);
       timetableImport.value.status = 'Extraindo tabela do DOCX...';
       payload = await extractTableFromDocx(file);
     } else {
