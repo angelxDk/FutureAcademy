@@ -11,7 +11,9 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import {
-  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   getDoc,
   setDoc,
@@ -35,7 +37,14 @@ const forceDisableFirestore = import.meta.env.VITE_DISABLE_FIRESTORE === 'true' 
 
 if (!forceDisableFirestore) {
   try {
-    db = getFirestore(app);
+    // API moderna (SDK v9+) — substitui o deprecado enableIndexedDbPersistence
+    // persistentLocalCache: serve dados do IndexedDB instantaneamente (offline-first)
+    // persistentMultipleTabManager: sincroniza corretamente entre abas
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
   } catch (e) {
     console.warn('[Future Academy] Firestore não disponível:', e.message);
   }
@@ -66,11 +75,25 @@ const STATE_DOC = (uid) => doc(db, 'users', uid, 'data', 'state');
 
 async function loadUserData(uid) {
   if (!db) return null;
+
+  // Race entre Firestore e timeout de 5s
+  // Se a rede demorar mais que isso, o SWR do LS já garantiu uma UI funcional
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('firestore_timeout')), 5000)
+  );
+
   try {
-    const snap = await getDoc(STATE_DOC(uid));
+    const snap = await Promise.race([
+      getDoc(STATE_DOC(uid)),
+      timeout
+    ]);
     return snap.exists() ? snap.data() : null;
   } catch (err) {
-    console.warn('[Future Academy] Não foi possível carregar dados do Firestore (verifique se a Database está ativada):', err.message);
+    if (err.message === 'firestore_timeout') {
+      console.warn('[Future Academy] Firestore timeout (>5s) — continuando com cache local.');
+      return null; // SWR do localStorage já está exibindo os dados
+    }
+    console.warn('[Future Academy] Não foi possível carregar dados do Firestore:', err.message);
     try { await terminate(db); db = null; } catch (e) { }
     return null;
   }
