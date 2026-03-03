@@ -48,6 +48,10 @@ export const useAuthStore = defineStore('auth', {
                     // Layout e nav aparecem imediatamente — auth já confirmada
                     this.authLoading = false;
 
+                    // Prefetch do chunk do Dashboard em background (sem bloquear)
+                    // Garante que o chunk já está em cache quando o router navegar para /
+                    import('../sections/DashboardSection.vue');
+
                     // Dados aguardam a hidratação — conteúdo exibe skeleton enquanto isso
                     this.dataLoading = true;
                     try {

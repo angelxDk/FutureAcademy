@@ -1,11 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import DashboardSection from '../sections/DashboardSection.vue';
 
 const routes = [
     {
         path: '/',
         name: 'dashboard',
-        component: DashboardSection,
+        component: () => import('../sections/DashboardSection.vue'),
         meta: {
             requiresAuth: false
         }
