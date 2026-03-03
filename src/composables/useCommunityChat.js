@@ -2,14 +2,14 @@ import { reactive, computed, nextTick } from 'vue';
 import { useUserStore } from '../stores/useUserStore';
 import { useCommunitiesStore } from '../stores/useCommunitiesStore';
 import { useAppStore } from '../stores/useAppStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { uid, safeNumber } from '../utils/helpers';
 import { parseDateTime } from '../utils/date';
+import { useDebouncedPersist } from './useDebouncedPersist';
 
 export function useCommunityChat() {
     const userStore = useUserStore();
     const communitiesStore = useCommunitiesStore();
-    const syncStore = useSyncStore();
+    const persist = useDebouncedPersist(500);
     const appStore = useAppStore();
 
     const communityChat = reactive({
@@ -58,7 +58,7 @@ export function useCommunityChat() {
             createdAt: new Date().toISOString()
         };
         communitiesStore.communities.push(newCommunity);
-        syncStore.persistState();
+        persist();
 
         communityChat.selectedCommunityId = newCommunity.id;
         appStore.showToast('Comunidade criada.');
@@ -80,7 +80,7 @@ export function useCommunityChat() {
     const removeCommunity = (id) => {
         const wasSelected = communityChat.selectedCommunityId === id;
         communitiesStore.communities = communitiesStore.communities.filter((item) => item.id !== id);
-        syncStore.persistState();
+        persist();
         if (wasSelected) ensureCommunitySelection();
         appStore.showToast('Comunidade removida.');
     };
@@ -132,7 +132,7 @@ export function useCommunityChat() {
             text: messageText,
             createdAt: new Date().toISOString()
         });
-        syncStore.persistState();
+        persist();
         nextTick(() => scrollCommunityMessagesToBottom());
     };
 

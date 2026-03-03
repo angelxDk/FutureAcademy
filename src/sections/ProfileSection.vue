@@ -47,13 +47,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '../stores/useUserStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { useAppStore } from '../stores/useAppStore';
 import { DEFAULT_AVATAR } from '../utils/constants';
+import { useDebouncedPersist } from '../composables/useDebouncedPersist';
 
 const userStore = useUserStore();
-const syncStore = useSyncStore();
 const appStore = useAppStore();
+const persist = useDebouncedPersist(500);
 
 const profileForm = ref({
   name: '',
@@ -81,7 +81,7 @@ const saveProfile = () => {
   if(profileForm.value.photo) {
       userStore.profile.photo = profileForm.value.photo;
   }
-  syncStore.persistState();
+    persist();
   appStore.showToast('Perfil atualizado.');
 };
 
@@ -107,7 +107,7 @@ const onPhotoChange = (event) => {
     }
     userStore.profile.photo = compressed;
     
-    syncStore.persistState();
+      persist();
     appStore.showToast('Foto de perfil atualizada.');
   };
   img.src = url;

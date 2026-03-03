@@ -63,13 +63,13 @@
 <script setup>
 import { ref } from 'vue';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { useAppStore } from '../stores/useAppStore';
 import { createSubjectForm } from '../utils/helpers';
+import { useDebouncedPersist } from '../composables/useDebouncedPersist';
 
 const subjectsStore = useSubjectsStore();
-const syncStore = useSyncStore();
 const appStore = useAppStore();
+const persist = useDebouncedPersist(500);
 
 const subjectForm = ref(createSubjectForm());
 const subjectEditId = ref('');
@@ -83,7 +83,7 @@ const submitSubject = () => {
   const success = subjectsStore.addSubject(subjectForm.value, subjectEditId.value);
   if (success) {
     resetSubjectForm();
-    syncStore.persistState();
+    persist();
   }
 };
 
@@ -108,7 +108,7 @@ const cancelSubjectEdit = () => {
 
 const removeSubject = (id) => {
   subjectsStore.removeSubject(id);
-  syncStore.persistState();
+  persist();
   if (subjectEditId.value === id) {
     resetSubjectForm();
   }

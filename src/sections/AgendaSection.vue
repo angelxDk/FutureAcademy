@@ -52,15 +52,15 @@
 import { ref } from 'vue';
 import { useAgendaStore } from '../stores/useAgendaStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { useAppStore } from '../stores/useAppStore';
 import { uid } from '../utils/helpers';
 import { todayISO, nowTimeISO } from '../utils/date';
+import { useDebouncedPersist } from '../composables/useDebouncedPersist';
 
 const agendaStore = useAgendaStore();
 const subjectsStore = useSubjectsStore();
-const syncStore = useSyncStore();
 const appStore = useAppStore();
+const persist = useDebouncedPersist(500);
 
 const createEventForm = () => ({
   title: '',
@@ -83,13 +83,13 @@ const submitEvent = () => {
     ...eventForm.value,
     createdAt: new Date().toISOString()
   });
-  syncStore.persistState();
+  persist();
   eventForm.value = createEventForm();
 };
 
 const removeEvent = (id) => {
   agendaStore.removeEvent(id);
-  syncStore.persistState();
+  persist();
 };
 
 const subjectName = (id) => {

@@ -113,15 +113,15 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRecordsStore } from '../stores/useRecordsStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
-import { useSyncStore } from '../stores/useSyncStore';
 import { useAppStore } from '../stores/useAppStore';
 import { uid, createRecordForm } from '../utils/helpers';
 import { exportRecord, sendRecordEmail } from '../utils/exportRecord';
+import { useDebouncedPersist } from '../composables/useDebouncedPersist';
 
 const recordsStore = useRecordsStore();
 const subjectsStore = useSubjectsStore();
-const syncStore = useSyncStore();
 const appStore = useAppStore();
+const persist = useDebouncedPersist(500);
 
 const editorRef = ref(null);
 
@@ -163,7 +163,7 @@ const submitRecord = () => {
     }
   }
 
-  syncStore.persistState();
+  persist();
   resetRecordForm();
 };
 
@@ -192,7 +192,7 @@ const cancelRecordEdit = () => {
 
 const removeRecord = (id) => {
   recordsStore.records = recordsStore.records.filter((r) => r.id !== id);
-  syncStore.persistState();
+  persist();
   if (recordEditId.value === id) resetRecordForm();
 };
 
