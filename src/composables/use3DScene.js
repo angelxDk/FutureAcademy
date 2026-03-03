@@ -68,9 +68,14 @@ export function use3DScene(appStore) {
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 0, 5.3);
 
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        const renderer = new THREE.WebGLRenderer({
+            canvas,
+            alpha: true,
+            antialias: false,
+            powerPreference: 'high-performance'
+        });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         renderer.setClearAlpha(0);
 
         const particleCount = 420;
