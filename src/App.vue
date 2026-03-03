@@ -131,7 +131,7 @@
               <div ref="sectionContent">
                 <Suspense>
                   <router-view v-slot="{ Component }">
-                    <KeepAlive :max="6">
+                    <KeepAlive :max="2" :include="['DashboardSection']">
                       <component :is="Component" />
                     </KeepAlive>
                   </router-view>

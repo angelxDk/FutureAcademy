@@ -171,6 +171,7 @@
 </template>
 
 <script setup>
+defineOptions({ name: 'DashboardSection' });
 import { ref, computed } from 'vue';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
 import { useTimetableStore } from '../stores/useTimetableStore';
