@@ -5,7 +5,9 @@
       <div class="entrance-layout">
         <section class="agora-scene" aria-label="Apresentação da Future Academy">
           <img class="agora-scene__art" src="../assets/agora-futura.png" alt="Ágora de mármore com colunas gregas e órbitas douradas sob um céu noturno." fetchpriority="high" decoding="async" />
+          <HolographicGlobe />
           <div class="agora-scene__shade" aria-hidden="true" />
+          <div class="agora-meteors" aria-hidden="true"><span v-for="star in 5" :key="star" class="agora-meteor" :style="{ '--star': star }" /></div>
           <div class="entrance-presentation"><p class="presentation-eyebrow">ESTUDO · ORGANIZAÇÃO · EVOLUÇÃO</p><h2>Estudo com propósito<br>para o seu futuro.</h2><p class="presentation-description">Organize sua rotina, reúna seus materiais e encontre espaço para aprender no seu ritmo.</p><div class="presentation-tools"><span><v-icon icon="mdi-calendar-month-outline" />Plano de estudos</span><span><v-icon icon="mdi-notebook-outline" />Caderno</span><span><v-icon icon="mdi-auto-fix" />IA de estudo</span></div></div>
           <div class="presentation-benefits"><div><v-icon icon="mdi-bullseye-arrow" /><span><strong>Mais foco</strong><small>Sua rotina com clareza.</small></span></div><div><v-icon icon="mdi-book-open-page-variant-outline" /><span><strong>Suas ideias juntas</strong><small>Um lugar para cada descoberta.</small></span></div><div><v-icon icon="mdi-school-outline" /><span><strong>Seu próximo passo</strong><small>Aprenda no seu ritmo.</small></span></div></div>
         </section>
@@ -34,6 +36,7 @@
 </template>
 <script setup>
 import { computed, ref } from 'vue';
+import HolographicGlobe from './HolographicGlobe.vue';
 defineProps({ signedIn: { type: Boolean, default: false }, busy: { type: Boolean, default: false } });
 const emit = defineEmits(['google', 'facebook', 'submit']);
 const mode = ref('login'), name = ref(''), email = ref(''), password = ref(''), confirm = ref(''), showPassword = ref(false), formRef = ref(null);
@@ -120,4 +123,13 @@ function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'logi
 @media(min-width:1700px) { .academy-entrance { padding:0; } .entrance-layout { min-height:100dvh; } .entrance-form-area { margin-top:100px; } }
 @media(max-width:1100px) { .entrance-layout { grid-template-columns:minmax(0,1fr) minmax(400px,1fr); } .entrance-form-area { padding:32px 24px; margin-left:12px; margin-right:20px; } .entrance-presentation { padding-inline:7%; } .presentation-benefits { flex-direction:column; padding:18px; gap:15px; } .presentation-benefits > div + div { border:0; padding:0; } }
 @media(max-width:760px) { .academy-entrance { padding:0 20px 24px; } .entrance-topline { position:relative; inset:auto; padding:22px 0; margin:0; } .entrance-layout { display:block; min-height:0; } .agora-scene { display:none; } .entrance-form-area { margin:12px 0 0; padding:30px 24px; border-radius:22px; } .entrance-form-area h1 { font-size:30px; } .entrance-form-description { margin-bottom:26px; } }
+.agora-meteors { position:absolute; inset:0 0 35%; overflow:hidden; pointer-events:none; }
+.agora-meteor { position:absolute; top:-5%; left:calc(20% + var(--star) * 14%); width:110px; height:1px; background:linear-gradient(90deg,transparent,#eccb8599,#fff0c3); border-radius:50%; opacity:0; transform:rotate(135deg); animation:agora-shoot 17s linear infinite; animation-delay:calc(var(--star) * 3.3s - 14s); }
+.agora-meteor::after { content:''; position:absolute; right:-1px; top:-1px; width:3px; height:3px; border-radius:50%; background:#fff1c9; box-shadow:0 0 7px 2px #ecca8177; }
+.agora-meteor:nth-child(2) { top:12%; width:85px; }
+.agora-meteor:nth-child(3) { top:4%; width:130px; }
+.agora-meteor:nth-child(4) { top:22%; width:70px; }
+.agora-meteor:nth-child(5) { top:16%; width:100px; }
+@keyframes agora-shoot { 0%,3% { opacity:0; transform:translate(0,0) rotate(135deg); } 4% { opacity:.8; } 11% { opacity:0; transform:translate(-290px,290px) rotate(135deg); } 100% { opacity:0; transform:translate(-290px,290px) rotate(135deg); } }
+@media(prefers-reduced-motion:reduce) { .agora-meteor { display:none; animation:none; } }
 </style>

@@ -27,12 +27,18 @@
 
             <div class="app-header__right">
 
-              <div class="user-profile-chip">
-                <v-avatar size="32" class="user-avatar-img">
-                  <v-img :src="profile.photo || authUser.photo" :alt="authUser.name" cover />
-                </v-avatar>
-                <span class="user-profile-name">{{ (profile.name || authUser.name).split(' ')[0] }}</span>
-              </div>
+              <v-menu location="bottom end">
+                <template #activator="{ props }">
+                  <button v-bind="props" type="button" class="user-profile-chip" aria-label="Abrir menu da conta">
+                    <v-avatar size="32" class="user-avatar-img"><v-img :src="profile.photo || authUser.photo" :alt="authUser.name" cover /></v-avatar>
+                    <span class="user-profile-name">{{ (profile.name || authUser.name).split(' ')[0] }}</span>
+                    <v-icon icon="mdi-chevron-down" size="16" />
+                  </button>
+                </template>
+                <v-list density="comfortable" rounded="lg" min-width="190" aria-label="Menu da conta">
+                  <v-list-item :to="{ name: 'profile' }" prepend-icon="mdi-account-edit-outline" title="Editar perfil" />
+                </v-list>
+              </v-menu>
 
               <button class="theme-toggle" :class="{ 'theme-toggle--light': settings.theme === 'light' }" @click="toggleTheme" :title="settings.theme === 'dark' ? 'Mudar para claro' : 'Mudar para escuro'">
                 <span class="theme-toggle__icon" :key="settings.theme">
@@ -470,7 +476,11 @@ onBeforeUnmount(() => {
 }
 
 /* Perfil do usuário */
+.user-profile-chip:focus-visible { outline:2px solid rgb(var(--gold-500)); outline-offset:4px; }
 .user-profile-chip {
+  cursor:pointer;
+  font:inherit;
+  color:var(--app-text);
   display: flex;
   align-items: center;
   gap: 8px;

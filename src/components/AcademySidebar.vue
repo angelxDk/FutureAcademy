@@ -26,7 +26,7 @@ const workspace = useWorkspaceStore(), sync = useSyncStore();
 const groups = [
   { title: 'Organizar', tools: ['dashboard', 'subjects', 'timetable', 'agenda'] },
   { title: 'Aprender', tools: ['records', 'assistant', 'pomodoro', 'focus-music'] },
-  { title: 'Conectar', tools: ['communities', 'profile'] }
+  { title: 'Conectar', tools: ['communities'] }
 ];
 const tool = id => WORKSPACE_TOOLS.find(item => item.id === id);
 function toggle() { workspace.compactSidebar = !workspace.compactSidebar; sync.persistState(); }

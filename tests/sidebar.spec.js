@@ -41,7 +41,8 @@ it('shows all tools in the header even when the old sidebar preference is collap
   expect(wrapper.classes()).toContain('academy-navigation--header');
   expect(wrapper.classes()).not.toContain('academy-sidebar--collapsed');
   expect(wrapper.find('.sidebar-toggle').exists()).toBe(false);
-  expect(wrapper.findAll('a')).toHaveLength(10);
+  expect(wrapper.findAll('a')).toHaveLength(9);
+  expect(wrapper.find('a[aria-label="Meu perfil"]').exists()).toBe(false);
   expect(wrapper.find('a[aria-label="Caderno"]').text()).toContain('Caderno');
   wrapper.unmount();
 });
