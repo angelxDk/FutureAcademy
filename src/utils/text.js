@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 export function asString(value) {
     return String(value || '').trim();
 }
@@ -15,10 +16,12 @@ export function normalizeEditorHtml(rawHtml) {
     const html = String(rawHtml || '').trim();
     if (!html) return '<p></p>';
     if (typeof document === 'undefined') return html;
-    const container = document.createElement('div');
-    container.innerHTML = html;
-    container.querySelectorAll('script,style').forEach((node) => node.remove());
-    return container.innerHTML || '<p></p>';
+    return DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true },
+        ADD_ATTR: ['data-type', 'data-checked'],
+        FORBID_TAGS: ['iframe', 'style', 'form', 'button', 'img', 'video', 'audio'],
+        FORBID_ATTR: ['style']
+    }) || '<p></p>';
 }
 
 export function htmlToPlainText(rawHtml) {
@@ -29,6 +32,8 @@ export function htmlToPlainText(rawHtml) {
     }
     const container = document.createElement('div');
     container.innerHTML = html;
+    container.querySelectorAll('br').forEach(node => node.replaceWith(document.createTextNode('\n')));
+    container.querySelectorAll('p,div,li,h1,h2,h3,h4,blockquote,pre').forEach(node => node.append(document.createTextNode('\n')));
     return asString(container.textContent || container.innerText || '');
 }
 

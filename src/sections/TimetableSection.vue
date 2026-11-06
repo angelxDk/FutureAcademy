@@ -1,9 +1,12 @@
 <template>
-  <section class="grid gap-6">
+  <section class="grid gap-6 timetable-section">
+    <div class="section-heading mb-0"><div><p class="eyebrow">FICHÁRIO / PLANEJAMENTO</p><h1 class="text-2xl font-bold">Sua semana, organizada.</h1><p class="text-sm text-medium-emphasis mt-2">Todas as disciplinas no mesmo lugar, como no seu caderno.</p></div><div class="flex flex-wrap gap-2"><v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate()">Nova aula</v-btn><v-menu><template #activator="{ props }"><v-btn v-bind="props" variant="outlined" icon="mdi-dots-horizontal" aria-label="Opções da grade" /></template><v-list density="compact"><v-list-item title="Exportar para calendário (.ics)" prepend-icon="mdi-calendar-export" @click="exportCalendar" /><v-list-item title="Imprimir grade / salvar PDF" prepend-icon="mdi-printer-outline" @click="printWeek" /><v-list-item :title="listView ? 'Visualização de caderno' : 'Visualização em lista'" prepend-icon="mdi-view-list-outline" @click="listView = !listView" /></v-list></v-menu></div></div>
+    <div class="flex justify-between items-center flex-wrap gap-3"><span class="text-xs text-medium-emphasis">Horários adaptados às suas aulas, de manhã, à tarde ou à noite.</span><v-switch v-model="weekends" label="Fim de semana" hide-details density="compact" color="primary" /></div>
+    <WeeklyTimetable v-if="!listView" :entries="timetableStore.timetable" :subjects="subjectsStore.subjects" :weekends="weekends" @edit="startTimetableEdit" @create="openCreate" />
 
     <!-- Formulário manual -->
-    <div class="glass-card p-6">
-      <h2 class="text-xl font-bold text-primary mb-1">Horários</h2>
+    <v-dialog v-model="formDialog" max-width="760" scrollable><v-card class="p-6" rounded="xl">
+      <div class="section-heading"><h2 class="text-xl font-bold">{{ timetableEditId ? 'Editar aula' : 'Nova aula' }}</h2><v-btn icon="mdi-close" variant="text" size="small" aria-label="Fechar formulário" @click="cancelTimetableEdit" /></div>
       <p class="text-sm text-medium-emphasis mb-5">Configure sua grade semanal de aulas</p>
       <v-form @submit.prevent="submitTimetable">
         <v-row>
@@ -37,10 +40,10 @@
           </v-col>
         </v-row>
       </v-form>
-    </div>
+    </v-card></v-dialog>
 
     <!-- Tabela de horários -->
-    <div class="glass-card overflow-hidden">
+    <div v-if="listView" class="glass-card overflow-hidden">
       <v-table class="timetable-table">
         <thead>
           <tr>
@@ -74,10 +77,10 @@
     </div>
 
     <!-- Importar horários -->
-    <div class="glass-card p-6">
+    <details class="glass-card p-6"><summary class="font-semibold" style="cursor:pointer">Importar grade de um PDF ou Word</summary><div class="mt-4">
       <h2 class="text-xl font-bold text-primary mb-1">Importar Horários</h2>
       <p class="text-sm text-medium-emphasis mb-5">
-        Envie um arquivo <strong>.docx</strong> ou <strong>.pdf</strong> com a grade horária — a IA extrai e cadastra automaticamente.
+        Envie um arquivo <strong>.docx</strong> ou <strong>.pdf</strong> com a grade horária — o importador gratuito identifica a tabela para você revisar antes de cadastrar.
       </p>
 
       <!-- Botão de upload -->
@@ -185,24 +188,28 @@
           </v-btn>
         </div>
       </div>
-    </div>
+    </div></details>
 
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useTimetableStore } from '../stores/useTimetableStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
 import { useUserStore } from '../stores/useUserStore';
 import { useAppStore } from '../stores/useAppStore';
 import { DAY_OPTIONS } from '../utils/constants';
 import { uid, createTimetableForm, createSubjectForm } from '../utils/helpers';
-import { lazyLoadScript } from '../utils/lazyLoadScript';
 import { useDebouncedPersist } from '../composables/useDebouncedPersist';
 
-const PDF_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const MAMMOTH_URL = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';
+import WeeklyTimetable from '../components/WeeklyTimetable.vue';
+import { timetableIcs } from '../utils/timetable';
+import { useSyncStore } from '../stores/useSyncStore';
+const syncStore = useSyncStore();
+const formDialog = ref(false), listView = ref(false);
+
+let pdfjs, mammoth;
 
 const timetableStore = useTimetableStore();
 const subjectsStore = useSubjectsStore();
@@ -211,6 +218,15 @@ const appStore = useAppStore();
 const persist = useDebouncedPersist(500);
 
 const fileInput = ref(null);
+const weekendChoice = ref(null);
+const weekends = computed({ get: () => weekendChoice.value ?? timetableStore.timetable.some(e => [0, 6].includes(Number(e.day))), set: value => { weekendChoice.value = value; } });
+function openCreate(values = {}) { resetTimetableForm(); Object.assign(timetableForm.value, values); formDialog.value = true; }
+function exportCalendar() {
+  const url = URL.createObjectURL(new Blob([timetableIcs(timetableStore.timetable, subjectsStore.subjects)], { type: 'text/calendar;charset=utf-8' }));
+  const link = document.createElement('a'); link.href = url; link.download = 'minha-grade-future-academy.ics'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function printWeek() { listView.value = false; setTimeout(() => window.print(), 100); }
+
 
 const timetableForm = ref(createTimetableForm());
 const timetableEditId = ref('');
@@ -222,13 +238,14 @@ const resetTimetableForm = () => {
 
 const submitTimetable = () => {
   const success = timetableStore.addTimetable(timetableForm.value, timetableEditId.value);
-  if (success) resetTimetableForm();
+  if (success) { resetTimetableForm(); formDialog.value = false; }
   persist();
 };
 
 const startTimetableEdit = (id) => {
   const item = timetableStore.timetable.find((t) => t.id === id);
   if (!item) return;
+  formDialog.value = true;
   timetableEditId.value = item.id;
   timetableForm.value = createTimetableForm({
     subjectId: item.subjectId,
@@ -242,6 +259,7 @@ const startTimetableEdit = (id) => {
 };
 
 const cancelTimetableEdit = () => {
+  formDialog.value = false;
   resetTimetableForm();
   appStore.showToast('Edição cancelada.');
 };
@@ -266,11 +284,11 @@ const timetableImport = ref({
 
 // ── Extrai tabela estruturada de DOCX via HTML (mammoth.convertToHtml) ──
 const extractTableFromDocx = async (file) => {
-  if (typeof window.mammoth === 'undefined') throw new Error('Biblioteca mammoth.js não carregada.');
+  if (!mammoth) { const module = await import('mammoth/mammoth.browser'); mammoth = module.default || module; }
   const arrayBuffer = await file.arrayBuffer();
 
   // Converte para HTML para preservar estrutura de tabela
-  const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer });
+  const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
   const html = htmlResult.value || '';
 
   if (!html.trim()) throw new Error('O arquivo .docx parece estar vazio.');
@@ -291,18 +309,22 @@ const extractTableFromDocx = async (file) => {
   }
 
   // Fallback: sem tabela, extrai texto plano
-  const textResult = await window.mammoth.extractRawText({ arrayBuffer });
+  const textResult = await mammoth.extractRawText({ arrayBuffer });
   return { type: 'text', content: textResult.value || '' };
 };
 
 // ── Extrai texto de PDF com posicionamento por coluna ──
 const extractStructuredFromPdf = async (file) => {
-  if (typeof window.pdfjsLib === 'undefined') throw new Error('Biblioteca pdf.js não carregada.');
-  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  if (!pdfjs) {
+    pdfjs = await import('pdfjs-dist');
+    const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  }
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjs.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
 
   const allItems = [];
+  let pageOffset = 0;
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const viewport = page.getViewport({ scale: 1 });
@@ -312,9 +334,11 @@ const extractStructuredFromPdf = async (file) => {
     content.items.forEach(item => {
       if (!item.str.trim()) return;
       const [,, , , x, y] = item.transform;
-      allItems.push({ str: item.str.trim(), x: Math.round(x), y: Math.round(viewport.height - y) });
+      allItems.push({ str: item.str.trim(), x: Math.round(x), y: Math.round(pageOffset + viewport.height - y) });
     });
+    pageOffset += viewport.height + 20;
   }
+  await pdf.destroy();
 
   if (!allItems.length) return { type: 'text', content: '' };
 
@@ -399,6 +423,7 @@ const onTimetableFileImport = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   event.target.value = '';
+  if (file.size > 20 * 1024 * 1024) { appStore.showToast('Use um arquivo de até 20 MB.'); return; }
 
   timetableImport.value.busy = true;
   timetableImport.value.status = 'Carregando bibliotecas...';
@@ -409,11 +434,9 @@ const onTimetableFileImport = async (event) => {
     let payload;
 
     if (ext === 'pdf') {
-      await lazyLoadScript(PDF_JS_URL);
       timetableImport.value.status = 'Extraindo dados do PDF...';
       payload = await extractStructuredFromPdf(file);
     } else if (ext === 'docx') {
-      await lazyLoadScript(MAMMOTH_URL);
       timetableImport.value.status = 'Extraindo tabela do DOCX...';
       payload = await extractTableFromDocx(file);
     } else {
@@ -486,28 +509,30 @@ const confirmImportTimetable = () => {
     }
   });
 
+  const rejected = [];
+  let imported = 0;
   entries.forEach((entry) => {
     let subId = '';
     if (entry.subjectName) {
       let found = subjectsStore.subjects.find((s) => s.name.toLowerCase() === entry.subjectName.toLowerCase());
       if (found) subId = found.id;
     }
-    timetableStore.timetable.push({
-      id: uid(),
+    const success = timetableStore.addTimetable({
       subjectId: subId,
-      day: Number(entry.day || 1),
+      day: Number(entry.day ?? 1),
       start: entry.start || '00:00',
       end: entry.end || '01:00',
       place: entry.place || '',
       notifyMinutes: 15
     });
+    if (success) imported++; else rejected.push(entry);
   });
 
   syncStore.persistState();
-  appStore.showToast(`Importação concluída: ${entries.length} horários e ${addedSubjects} novas matérias.`);
-  timetableImport.value.parsed = [];
+  appStore.showToast(`Importação concluída: ${imported} horários e ${addedSubjects} novas matérias.`);
+  timetableImport.value.parsed = rejected;
   timetableImport.value.newSubjects = [];
-  timetableImport.value.status = '';
+  timetableImport.value.status = rejected.length ? `${rejected.length} aulas não importadas por conflito ou dados incompletos. Revise ou descarte essas linhas.` : '';
 };
 </script>
 
@@ -528,15 +553,15 @@ const confirmImportTimetable = () => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(var(--dark-600), 0.8);
-  border-bottom: 1px solid rgba(var(--dark-600), 0.25);
+  color: rgb(var(--dark-600) / 0.8);
+  border-bottom: 1px solid rgb(var(--dark-600) / 0.25);
   background: rgba(0, 0, 0, 0.12);
 }
 
 .import-tt tbody td {
   padding: 8px 12px;
   font-size: 13px;
-  border-bottom: 1px solid rgba(var(--dark-600), 0.12);
+  border-bottom: 1px solid rgb(var(--dark-600) / 0.12);
   vertical-align: middle;
 }
 
@@ -545,7 +570,7 @@ const confirmImportTimetable = () => {
 }
 
 .import-tt tbody tr:hover td {
-  background: rgba(var(--dark-600), 0.08);
+  background: rgb(var(--dark-600) / 0.08);
 }
 
 /* Substituindo bg-opacity e border-opacity Tailwind */
@@ -553,14 +578,14 @@ const confirmImportTimetable = () => {
   transition: background 0.2s ease, color 0.2s ease;
 }
 .import-status--busy {
-  background: rgba(var(--dark-700), 0.5);
+  background: rgb(var(--dark-700) / 0.5);
   color: var(--app-muted);
 }
 .import-status--success {
-  background: rgba(var(--gold-500), 0.1);
+  background: rgb(var(--gold-500) / 0.1);
   color: rgb(var(--gold-500));
 }
 .import-table-border {
-  border: 1px solid rgba(var(--dark-600), 0.3);
+  border: 1px solid rgb(var(--dark-600) / 0.3);
 }
 </style>

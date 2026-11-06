@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import AuthPortal from '../components/AuthPortal.vue';
 
 const routes = [
+    { path: '/entrar', name: 'login', component: AuthPortal, meta: { requiresAuth: false } },
     {
         path: '/',
         name: 'dashboard',

@@ -4,12 +4,14 @@ import { useAppStore } from './useAppStore';
 
 export const useRecordsStore = defineStore('records', {
     state: () => ({
-        records: []
+        records: [],
+        draft: null,
+        drafts: {}
     }),
     getters: {
         orderedRecords: (state) => {
             return [...state.records].sort((a, b) => {
-                return (a.dueDate || '').localeCompare(b.dueDate || '');
+                return (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
             });
         }
     },

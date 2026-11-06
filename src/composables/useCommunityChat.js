@@ -1,5 +1,6 @@
 import { reactive, computed, nextTick } from 'vue';
-import { useUserStore } from '../stores/useUserStore';
+import { useAssistantStore } from '../stores/useAssistantStore';
+import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 import { useCommunitiesStore } from '../stores/useCommunitiesStore';
 import { useAppStore } from '../stores/useAppStore';
 import { uid, safeNumber } from '../utils/helpers';
@@ -7,7 +8,7 @@ import { parseDateTime } from '../utils/date';
 import { useDebouncedPersist } from './useDebouncedPersist';
 
 export function useCommunityChat() {
-    const userStore = useUserStore();
+
     const communitiesStore = useCommunitiesStore();
     const persist = useDebouncedPersist(500);
     const appStore = useAppStore();
@@ -146,7 +147,7 @@ export function useCommunityChat() {
             '/tempo <cidade> - consulta o clima atual (Open-Meteo).',
             '/spotify <busca> - lista faixas no Spotify.',
             '/cambio <valor> <moeda_origem> <moeda_destino> - ex: /cambio 100 USD BRL.',
-            '/ia <pergunta> - responde com OpenAI.',
+            '/ia <pergunta> - abre o tutor gratuito ao lado.',
             'Sem comando: mensagem vai direto para a IA via backend.',
             'Se der erro de configuração, confira as variáveis no arquivo .env do servidor.'
         ].join('\n');
@@ -257,37 +258,12 @@ export function useCommunityChat() {
         }
     };
 
-    const fetchOpenAiReply = async (community, prompt) => {
-        const model = userStore.settings.integrations.openAiModel || 'gpt-4o-mini';
-        const recentHistory = (community.messages || [])
-            .filter((message) => message.role === 'user' || message.role === 'assistant')
-            .slice(-8)
-            .map((message) => {
-                const roleLabel = message.role === 'user' ? 'Usuário' : 'Assistente';
-                return `${roleLabel}: ${message.text}`;
-            })
-            .join('\n');
-
-        try {
-            const response = await fetch('/api/openai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model,
-                    prompt,
-                    communityName: community.name,
-                    recentHistory
-                })
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                const apiMessage = data?.error || `falha HTTP ${response.status}`;
-                return `OpenAI não respondeu: ${apiMessage}`;
-            }
-            return String(data?.text || '').trim() || 'A OpenAI retornou uma resposta vazia.';
-        } catch (e) {
-            return `Erro ao consultar OpenAI: ${e.message}`;
-        }
+    const prepareStudyQuestion = prompt => {
+        const ai = useAssistantStore();
+        ai.question = ai.question ? `${ai.question}\n\n${prompt}` : prompt;
+        useWorkspaceStore().open('assistant', true);
+        persist();
+        return 'Pergunta preparada no tutor de estudo. Escolha o modelo gratuito e envie a pergunta no espaço da IA.';
     };
 
     const processCommunityCommand = async (community, commandLine) => {
@@ -328,8 +304,8 @@ export function useCommunityChat() {
                 appendCommunityMessage(community.id, 'assistant', 'Uso: /ia <pergunta>. Exemplo: /ia monte um cronograma de revisão para esta semana.', 'openai');
                 return;
             }
-            const answer = await fetchOpenAiReply(community, payload);
-            appendCommunityMessage(community.id, 'assistant', answer, 'openai');
+            const answer = prepareStudyQuestion(payload);
+            appendCommunityMessage(community.id, 'assistant', answer, 'study-ai');
             return;
         }
 
@@ -356,9 +332,6 @@ export function useCommunityChat() {
         try {
             if (text.startsWith('/')) {
                 await processCommunityCommand(community, text);
-            } else {
-                const answer = await fetchOpenAiReply(community, text);
-                appendCommunityMessage(community.id, 'assistant', answer, 'openai');
             }
         } catch (error) {
             const details = error instanceof Error ? error.message : 'falha inesperada.';

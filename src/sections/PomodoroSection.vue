@@ -72,15 +72,15 @@ const savePomodoroSettings = () => {
 
 <style scoped>
 .pomodoro-timer-box {
-  background: rgba(var(--dark-700), 0.4);
-  border: 1px solid rgba(var(--dark-600), 0.5);
+  background: rgb(var(--dark-700) / 0.4);
+  border: 1px solid rgb(var(--dark-600) / 0.5);
   border-radius: 16px;
   padding: 32px;
 }
 
 .pomodoro-settings-box {
-  background: rgba(var(--dark-800), 0.3);
-  border: 1px solid rgba(var(--dark-600), 0.3);
+  background: rgb(var(--dark-800) / 0.3);
+  border: 1px solid rgb(var(--dark-600) / 0.3);
   border-radius: 16px;
   padding: 24px;
 }

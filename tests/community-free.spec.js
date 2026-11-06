@@ -1,0 +1,26 @@
+import { it, expect, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+vi.mock('../src/stores/useSyncStore', () => ({ useSyncStore: () => ({ persistState: vi.fn() }) }));
+import { useCommunityChat } from '../src/composables/useCommunityChat';
+import { useAssistantStore } from '../src/stores/useAssistantStore';
+import { useWorkspaceStore } from '../src/stores/useWorkspaceStore';
+import { useAppStore } from '../src/stores/useAppStore';
+it('normal group messages never call a paid API and /ia prepares the free tutor without overwriting an existing question', async () => {
+  const pinia = createPinia(); setActivePinia(pinia);
+  const fetch = vi.spyOn(globalThis, 'fetch');
+  let ops;
+  const wrapper = mount({ setup() { ops = useCommunityChat(); return () => null; } }, { global: { plugins: [pinia] } });
+  ops.addCommunity({ name: 'Estudo', description: 'Grupo de revisão', emails: '' });
+  ops.communityChat.message = 'Vamos revisar a aula.';
+  await ops.sendCommunityMessage();
+  expect(fetch).not.toHaveBeenCalled();
+  useAssistantStore().question = 'Minha dúvida anterior';
+  ops.communityChat.message = '/ia Explique revisão espaçada';
+  await ops.sendCommunityMessage();
+  expect(useAssistantStore().question).toContain('Minha dúvida anterior');
+  expect(useAssistantStore().question).toContain('Explique revisão espaçada');
+  expect(useWorkspaceStore().visible).toContain('assistant');
+  expect(fetch).not.toHaveBeenCalled();
+  clearTimeout(useAppStore().toastTimeout); wrapper.unmount(); fetch.mockRestore();
+});

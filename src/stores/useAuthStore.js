@@ -19,6 +19,7 @@ import { FIREBASE_ERROR_MESSAGES } from '../utils/constants';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         authUser: null,
+        authBusy: false,
         authLoading: true,  // layout/nav — resolve em ~50ms (token em cache)
         dataLoading: false, // conteúdo de dados — resolve após hydratação do Firestore
         authEmail: '',
@@ -76,7 +77,7 @@ export const useAuthStore = defineStore('auth', {
 
         async loginWithGoogle() {
             const appStore = useAppStore();
-            this.authLoading = true;
+            this.authBusy = true;
             try {
                 const result = await signInWithPopup(auth, googleProvider);
                 this.authUser = normalizeFirebaseUser(result.user);
@@ -86,13 +87,13 @@ export const useAuthStore = defineStore('auth', {
                     appStore.showToast(this._getFirebaseErrorMessage(error));
                 }
             } finally {
-                this.authLoading = false;
+                this.authBusy = false;
             }
         },
 
         async loginWithFacebook() {
             const appStore = useAppStore();
-            this.authLoading = true;
+            this.authBusy = true;
             try {
                 const result = await signInWithPopup(auth, facebookProvider);
                 this.authUser = normalizeFirebaseUser(result.user);
@@ -102,7 +103,7 @@ export const useAuthStore = defineStore('auth', {
                     appStore.showToast(this._getFirebaseErrorMessage(error));
                 }
             } finally {
-                this.authLoading = false;
+                this.authBusy = false;
             }
         },
 
@@ -116,7 +117,7 @@ export const useAuthStore = defineStore('auth', {
                 appStore.showToast('As senhas não coincidem.');
                 return;
             }
-            this.authLoading = true;
+            this.authBusy = true;
             try {
                 let result;
                 if (mode === 'register') {
@@ -137,7 +138,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 appStore.showToast(this._getFirebaseErrorMessage(error));
             } finally {
-                this.authLoading = false;
+                this.authBusy = false;
             }
         },
 
@@ -146,6 +147,7 @@ export const useAuthStore = defineStore('auth', {
             const syncStore = useSyncStore();
 
             syncStore.persistState();
+            syncStore.flushPersist();
 
             try { await signOut(auth); } catch { /* ignore */ }
 

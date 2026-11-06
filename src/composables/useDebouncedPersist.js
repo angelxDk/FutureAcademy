@@ -27,6 +27,7 @@ export function useDebouncedPersist(wait = 500) {
     onUnmounted(() => {
         if (_timer) {
             clearTimeout(_timer);
+            syncStore.persistState();
             _timer = null;
         }
     });

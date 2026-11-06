@@ -2,7 +2,7 @@
   <section class="grid gap-6">
     <div class="glass-card p-6">
       <h2 class="text-xl font-bold text-primary mb-1">Comunidades de estudo</h2>
-      <p class="text-sm text-medium-emphasis mb-5">Chat com clima, Spotify</p>
+      <p class="text-sm text-medium-emphasis mb-5">Organize seus grupos e registros de estudo. Use /ia para preparar uma pergunta no tutor gratuito ao lado.</p>
 
       <v-form @submit.prevent="handleAddCommunity">
         <v-row>
@@ -22,30 +22,7 @@
       </v-form>
     </div>
 
-    <div class="glass-card p-6">
-      <h3 class="text-base font-semibold text-primary mb-1">Integrações</h3>
-      <p class="text-sm text-medium-emphasis mb-4">
-        As chaves ficam no backend (<code>.env</code>) e não são expostas no navegador.
-      </p>
-      <v-row>
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-model.trim="userStore.settings.integrations.openAiModel"
-            label="Modelo OpenAI (opcional)"
-            variant="outlined"
-            density="comfortable"
-            bg-color="transparent"
-            color="primary"
-          />
-        </v-col>
-        <v-col cols="12" md="8">
-          <v-alert type="info" variant="tonal" density="comfortable">
-            Configure <code>OPENAI_API_KEY</code>, <code>SPOTIFY_CLIENT_ID</code>, <code>SPOTIFY_CLIENT_SECRET</code> e
-            <code>EXCHANGERATE_API_KEY</code> no arquivo <code>.env</code>.
-          </v-alert>
-        </v-col>
-      </v-row>
-    </div>
+    <p class="text-xs text-medium-emphasis">Os grupos e registros desta seção ficam na sua conta. O envio de mensagens entre participantes em tempo real ainda não está disponível.</p>
 
     <v-row>
       <v-col cols="12" lg="4">
@@ -88,7 +65,7 @@
               <v-btn size="small" variant="outlined" color="primary" @click="chatOps.prefillCommunityCommand('/tempo São Paulo')">Tempo</v-btn>
               <v-btn size="small" variant="outlined" color="primary" @click="chatOps.prefillCommunityCommand('/spotify lo-fi study')">Spotify</v-btn>
               <v-btn size="small" variant="outlined" color="primary" @click="chatOps.prefillCommunityCommand('/cambio 100 USD BRL')">Câmbio</v-btn>
-              <v-btn size="small" variant="outlined" color="primary" @click="chatOps.prefillCommunityCommand('/ia sugira um plano semanal para estudo em grupo')">OpenAI</v-btn>
+              <v-btn size="small" variant="outlined" color="primary" @click="chatOps.prefillCommunityCommand('/ia sugira um plano semanal para estudo em grupo')">IA gratuita</v-btn>
               <v-btn size="small" variant="outlined" color="secondary" @click="chatOps.prefillCommunityCommand('/ajuda')">Ajuda</v-btn>
             </div>
 
@@ -142,11 +119,9 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useUserStore } from '../stores/useUserStore';
 import { useCommunitiesStore } from '../stores/useCommunitiesStore';
 import { useCommunityChat } from '../composables/useCommunityChat';
 
-const userStore = useUserStore();
 const communitiesStore = useCommunitiesStore();
 
 const communityForm = ref({
@@ -171,19 +146,19 @@ onMounted(() => {
 .community-messages-log {
   height: 260px;
   padding: 12px;
-  background: rgba(var(--dark-900), 0.4);
-  border: 1px solid rgba(var(--dark-600), 0.3);
+  background: rgb(var(--dark-900) / 0.4);
+  border: 1px solid rgb(var(--dark-600) / 0.3);
 }
 
 .msg-user {
-  background: rgba(var(--gold-500), 0.1) !important;
+  background: rgb(var(--gold-500) / 0.1) !important;
 }
 
 .msg-assistant {
-  background: rgba(var(--gold-400), 0.12) !important;
+  background: rgb(var(--gold-400) / 0.12) !important;
 }
 
 .msg-system {
-  background: rgba(var(--dark-700), 0.35) !important;
+  background: rgb(var(--dark-700) / 0.35) !important;
 }
 </style>

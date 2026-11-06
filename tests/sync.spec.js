@@ -1,0 +1,43 @@
+import { beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+vi.mock('../src/firebase', () => ({ loadUserData: vi.fn(async () => null), saveUserData: vi.fn(async () => {}) }));
+import { useSyncStore } from '../src/stores/useSyncStore';
+import { useSubjectsStore } from '../src/stores/useSubjectsStore';
+import { useRecordsStore } from '../src/stores/useRecordsStore';
+import { useAgendaStore } from '../src/stores/useAgendaStore';
+import { useCommunitiesStore } from '../src/stores/useCommunitiesStore';
+import { useWorkspaceStore } from '../src/stores/useWorkspaceStore';
+import { saveUserData } from '../src/firebase';
+beforeEach(() => { setActivePinia(createPinia()); localStorage.clear(); vi.useFakeTimers(); });
+afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
+it('persists reactive community data, notebook draft and workspace immediately to the correct local account', () => {
+  const sync = useSyncStore(); sync._currentUid = 'student-a'; sync._isHydrated = true;
+  useCommunitiesStore().communities.push({ id: 'group', name: 'Study', messages: [{ text: 'Hello' }] });
+  useRecordsStore().draft = { editId: '', form: { title: 'Minha ideia' }, html: '<p>Conteúdo</p>' };
+  useWorkspaceStore().studyPreset();
+  sync.persistState();
+  const saved = JSON.parse(localStorage.getItem('fa_state_student-a'));
+  expect(saved.recordDraft.form.title).toBe('Minha ideia');
+  expect(saved.communities[0].messages[0].text).toBe('Hello');
+  expect(saved.workspace.visible).toHaveLength(4);
+});
+it('restores a notes-only offline account and cancels pending writes when the session resets', async () => {
+  localStorage.setItem('fa_state_student-a', JSON.stringify({ records: [{ id: 'note', title: 'Offline' }], recordDraft: { form: { title: 'Rascunho' }, html: '<p>R</p>' }, savedAt: 10 }));
+  const sync = useSyncStore(); await sync.loadStateFromFirestore('student-a');
+  expect(useRecordsStore().records[0].title).toBe('Offline');
+  expect(useRecordsStore().draft.form.title).toBe('Rascunho');
+  sync.persistState(); sync.resetToDefault();
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(saveUserData).not.toHaveBeenCalled();
+  expect(useRecordsStore().records).toHaveLength(0);
+});
+it('removing a discipline preserves student-authored notes and events', () => {
+  const subjects = useSubjectsStore(), records = useRecordsStore(), agenda = useAgendaStore();
+  subjects.subjects = [{ id: 'math', name: 'Math' }];
+  records.records = [{ id: 'work', subjectId: 'math', content: 'Minha pesquisa' }];
+  agenda.events = [{ id: 'event', subjectId: 'math', title: 'Entrega' }];
+  useSyncStore().removeSubject('math');
+  expect(subjects.subjects).toHaveLength(0);
+  expect(records.records[0]).toMatchObject({ content: 'Minha pesquisa', subjectId: '' });
+  expect(agenda.events[0].title).toBe('Entrega');
+});

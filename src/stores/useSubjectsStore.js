@@ -7,9 +7,16 @@ export const useSubjectsStore = defineStore('subjects', {
         subjects: []
     }),
     actions: {
-        addSubject(payload) {
-            this.subjects.push({ id: uid(), ...payload });
+        addSubject(payload, editId = '') {
+            const name = String(payload.name || '').trim();
+            if (!name) { useAppStore().showToast('Informe o nome da disciplina.'); return false; }
+            if (editId) {
+                this.updateSubject(editId, { ...payload, name });
+                return true;
+            }
+            this.subjects.push({ ...payload, name, id: uid() });
             useAppStore().showToast('Matéria cadastrada.');
+            return true;
         },
         updateSubject(id, payload) {
             const target = this.subjects.find((s) => s.id === id);

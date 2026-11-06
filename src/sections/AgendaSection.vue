@@ -2,7 +2,7 @@
   <section class="grid gap-6">
     <div class="glass-card p-6">
       <h2 class="text-xl font-bold text-primary mb-1">Agenda</h2>
-      <p class="text-sm text-medium-emphasis mb-5">Organize seus eventos e compromissos</p>
+      <p class="text-sm text-medium-emphasis mb-5">Eventos e prazos dos seus trabalhos, reunidos em um só lugar.</p>
       <v-form @submit.prevent="submitEvent">
         <v-row>
           <v-col cols="12" md="4">
@@ -33,29 +33,34 @@
       </v-form>
     </div>
 
-    <v-row>
-      <v-col v-for="event in agendaStore.orderedEvents" :key="event.id" cols="12" sm="6" lg="4">
-        <div class="glass-card p-5" style="height: 100%">
-          <h3 class="text-base font-bold text-high-emphasis mb-2">{{ event.title }}</h3>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Tipo</span> {{ event.type }}</p>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Matéria</span> {{ subjectName(event.subjectId) }}</p>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Quando</span> {{ formatDate(event.date) }} {{ event.time }}</p>
-          <p class="text-sm text-medium-emphasis mb-4"><span class="font-semibold text-high-emphasis">Detalhes</span> {{ event.details || '---' }}</p>
-          <v-btn size="small" color="error" variant="outlined" @click="removeEvent(event.id)">Remover</v-btn>
-        </div>
-      </v-col>
-    </v-row>
+    <div class="glass-card p-6">
+      <div class="section-heading"><h2 class="text-xl">Linha do tempo</h2><v-switch v-model="showPast" label="Incluir anteriores" color="primary" hide-details density="compact" /></div>
+      <p v-if="!timeline.length" class="empty-copy">Nenhum compromisso neste período. Adicione um evento ou defina o prazo de um trabalho.</p>
+      <div v-for="item in timeline" :key="item.key" class="academic-row">
+        <div class="calendar-tile"><strong>{{ Number(item.date.slice(8)) }}</strong><small>{{ new Date(item.date + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short' }) }}</small></div>
+        <div class="academic-row__body"><strong>{{ item.title }}</strong><span>{{ subjectName(item.subjectId) }} · {{ item.source === 'record' ? 'Entrega de trabalho' : item.time }}</span></div>
+        <v-btn v-if="item.source === 'record'" :to="{ name: 'records', query: { edit: item.id } }" color="primary" variant="tonal" size="small">Abrir trabalho</v-btn>
+        <v-btn v-else size="small" variant="text" color="error" @click="removeEvent(item.id)">Remover</v-btn>
+      </div>
+    </div>
+
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useAgendaStore } from '../stores/useAgendaStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
 import { useAppStore } from '../stores/useAppStore';
 import { uid } from '../utils/helpers';
 import { todayISO, nowTimeISO } from '../utils/date';
 import { useDebouncedPersist } from '../composables/useDebouncedPersist';
+
+import { useRecordsStore } from '../stores/useRecordsStore';
+import { academicTimeline, dayKey } from '../utils/academic';
+const recordsStore = useRecordsStore();
+const showPast = ref(false);
+const timeline = computed(() => academicTimeline(agendaStore.events, recordsStore.records).filter(item => showPast.value || item.date >= dayKey()));
 
 const agendaStore = useAgendaStore();
 const subjectsStore = useSubjectsStore();
@@ -75,8 +80,8 @@ const createEventForm = () => ({
 const eventForm = ref(createEventForm());
 
 const submitEvent = () => {
-  if (!eventForm.value.title) {
-    appStore.showToast('Preencha o título do evento.');
+  if (!eventForm.value.title || !eventForm.value.date || !eventForm.value.time) {
+    appStore.showToast('Preencha título, data e horário do evento.');
     return;
   }
   agendaStore.addEvent({

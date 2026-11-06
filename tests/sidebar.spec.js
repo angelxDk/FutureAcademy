@@ -1,0 +1,47 @@
+import { it, expect, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { createPinia } from 'pinia';
+import { createRouter, createMemoryHistory } from 'vue-router';
+const persist = vi.hoisted(() => vi.fn());
+vi.mock('../src/stores/useSyncStore', () => ({ useSyncStore: () => ({ persistState: persist }) }));
+import AcademySidebar from '../src/components/AcademySidebar.vue';
+import { useWorkspaceStore } from '../src/stores/useWorkspaceStore';
+import { WORKSPACE_TOOLS } from '../src/utils/workspace';
+it('keeps the collapse control beside navigation and preserves routes and tools in the compact rail', async () => {
+  const pinia = createPinia();
+  const router = createRouter({ history: createMemoryHistory(), routes: WORKSPACE_TOOLS.map(tool => ({ path: `/${tool.id}`, name: tool.id, component: { template: '<div />' } })) });
+  await router.push('/records');
+  const workspace = useWorkspaceStore(pinia); workspace.active = 'records';
+  const wrapper = mount(AcademySidebar, { global: { plugins: [pinia, router], stubs: { VIcon: true } } });
+  expect(wrapper.find('aside .sidebar-toggle').attributes('aria-expanded')).toBe('true');
+  const links = wrapper.findAll('a');
+  await wrapper.find('.sidebar-toggle').trigger('click');
+  expect(workspace.compactSidebar).toBe(true);
+  expect(wrapper.classes()).toContain('academy-sidebar--collapsed');
+  expect(wrapper.find('.sidebar-toggle').attributes('aria-label')).toBe('Expandir menu lateral');
+  expect(wrapper.findAll('a')).toHaveLength(links.length);
+  expect(wrapper.find('a[aria-label="Caderno"]').attributes('aria-current')).toBe('page');
+  expect(router.currentRoute.value.name).toBe('records');
+  expect(workspace.snapshot().compactSidebar).toBe(true);
+  expect(persist).toHaveBeenCalledOnce();
+  await wrapper.find('.sidebar-toggle').trigger('click');
+  expect(workspace.compactSidebar).toBe(false);
+  expect(wrapper.find('.sidebar-toggle').attributes('aria-expanded')).toBe('true');
+  expect(wrapper.text()).toContain('Biblioteca pessoal');
+  wrapper.unmount();
+});
+
+it('shows all tools in the header even when the old sidebar preference is collapsed', async () => {
+  const pinia = createPinia();
+  const router = createRouter({ history: createMemoryHistory(), routes: WORKSPACE_TOOLS.map(tool => ({ path: `/${tool.id}`, name: tool.id, component: { template: '<div />' } })) });
+  await router.push('/records');
+  const workspace = useWorkspaceStore(pinia);
+  workspace.compactSidebar = true;
+  const wrapper = mount(AcademySidebar, { props: { header: true }, global: { plugins: [pinia, router], stubs: { VIcon: true } } });
+  expect(wrapper.classes()).toContain('academy-navigation--header');
+  expect(wrapper.classes()).not.toContain('academy-sidebar--collapsed');
+  expect(wrapper.find('.sidebar-toggle').exists()).toBe(false);
+  expect(wrapper.findAll('a')).toHaveLength(10);
+  expect(wrapper.find('a[aria-label="Caderno"]').text()).toContain('Caderno');
+  wrapper.unmount();
+});

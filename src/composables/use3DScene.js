@@ -16,6 +16,9 @@ export function use3DScene(appStore) {
     let _threeBurstUntil = 0;
     let _threePaused = false;
 
+    let _threeThemeUpdater = null;
+    const update3DTheme = () => _threeThemeUpdater?.();
+
     const animate3D = () => {
         if (!_threeRenderer || !_threeScene || !_threeCamera) return;
         if (_threePaused) { _threeAnimationId = null; return; } // yield GPU while user types
@@ -115,6 +118,7 @@ export function use3DScene(appStore) {
 
         const material = new THREE.ShaderMaterial({
             uniforms: {
+                uTint: { value: 1 },
                 uTime: { value: 0 },
                 uPulse: { value: 1.0 },
                 uModeScale: { value: 1.0 },
@@ -141,10 +145,11 @@ export function use3DScene(appStore) {
             `,
             fragmentShader: `
                 varying vec3 vColor;
+                uniform float uTint;
                 void main() {
                     float dist = distance(gl_PointCoord, vec2(0.5));
                     if (dist > 0.5) discard;
-                    gl_FragColor = vec4(vColor, 0.62);
+                    gl_FragColor = vec4(vColor * uTint, 0.62);
                 }
             `,
             transparent: true,
@@ -238,10 +243,24 @@ export function use3DScene(appStore) {
         window.addEventListener('pointerdown', _threePointerDownHandler, { passive: true });
         window.addEventListener('mouseout', _threePointerLeaveHandler);
 
+        _threeThemeUpdater = () => {
+            const light = document.documentElement.dataset.theme === 'light';
+            material.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+            material.uniforms.uTint.value = light ? 0.38 : 1;
+            material.needsUpdate = true;
+            const palette = light ? [0x89612f, 0x747044, 0x996432, 0x8d753b] : [0xd4af37, 0xf3c669, 0xf39c12, 0xb08d27];
+            [ico1, ico2, torus, ring].forEach((mesh, i) => {
+                mesh.material.color.setHex(palette[i]);
+                mesh.material.opacity = light ? [0.6, 0.55, 0.42, 0.5][i] : [0.25, 0.22, 0.16, 0.18][i];
+            });
+            renderer.render(scene, camera);
+        };
+        update3DTheme();
         animate3D();
     };
 
     const destroy3DScene = () => {
+        _threeThemeUpdater = null;
         if (_threeAnimationId) {
             cancelAnimationFrame(_threeAnimationId);
             _threeAnimationId = null;
@@ -305,6 +324,7 @@ export function use3DScene(appStore) {
     };
 
     return {
+        update3DTheme,
         init3DScene,
         destroy3DScene,
         pauseCanvas,

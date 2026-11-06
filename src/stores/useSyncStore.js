@@ -14,6 +14,10 @@ import { usePomodoroStore } from './usePomodoroStore';
 import { useCommunitiesStore } from './useCommunitiesStore';
 import { useUserStore } from './useUserStore';
 
+import { useSoundStore } from './useSoundStore';
+import { useAssistantStore } from './useAssistantStore';
+import { useWorkspaceStore } from './useWorkspaceStore';
+
 const LS_KEY = (uid) => `fa_state_${uid}`;
 
 function defaultStateSnapshot() {
@@ -26,6 +30,10 @@ function defaultStateSnapshot() {
         timetable: [],
         events: [],
         records: [],
+        recordDraft: null,
+        recordDrafts: {},
+        workspace: null,
+        studyAssistant: null,
         studySessions: [],
         communities: [],
         pomodoro: { work: 25, shortBreak: 5, longBreak: 15, cycles: 4, subjectId: '' }
@@ -55,6 +63,8 @@ export const useSyncStore = defineStore('sync', {
 
             // Faster than JSON.stringify/parse and robust against uninitialized state
             return {
+                studyAssistant: { messages: useAssistantStore().messages.map(m => ({ ...m })), question: useAssistantStore().question },
+                workspace: useWorkspaceStore().snapshot(),
                 savedAt: Date.now(), // timestamp de conflito para stale-while-revalidate
                 settings: userStore.settings ? { ...userStore.settings, integrations: { ...userStore.settings.integrations } } : null,
                 profile: userStore.profile ? { ...userStore.profile } : null,
@@ -65,9 +75,11 @@ export const useSyncStore = defineStore('sync', {
                 subjects: (subjectsStore.subjects || []).map(s => ({ ...s })),
                 timetable: (timetableStore.timetable || []).map(t => ({ ...t })),
                 events: (agendaStore.events || []).map(e => ({ ...e })),
+                recordDrafts: JSON.parse(JSON.stringify(recordsStore.drafts)),
+                recordDraft: recordsStore.draft ? { ...recordsStore.draft, form: { ...recordsStore.draft.form } } : null,
                 records: (recordsStore.records || []).map(r => ({ ...r })),
                 studySessions: (pomodoroStore.studySessions || []).map(s => ({ ...s })),
-                communities: (communitiesStore.communities || []).map(c => structuredClone(c)),
+                communities: (communitiesStore.communities || []).map(c => JSON.parse(JSON.stringify(c))),
                 pomodoro: pomodoroStore.pomodoro ? { ...pomodoroStore.pomodoro } : null
             };
         },
@@ -83,6 +95,9 @@ export const useSyncStore = defineStore('sync', {
             const pomodoroStore = usePomodoroStore();
             const communitiesStore = useCommunitiesStore();
 
+            useWorkspaceStore().restore(snapshot?.workspace || {});
+            useAssistantStore().messages = snapshot?.studyAssistant?.messages || [];
+            useAssistantStore().question = snapshot?.studyAssistant?.question || '';
             const base = defaultStateSnapshot();
             const raw = snapshot || base;
 
@@ -99,6 +114,8 @@ export const useSyncStore = defineStore('sync', {
             subjectsStore.subjects = Array.isArray(raw.subjects) ? raw.subjects : [];
             timetableStore.timetable = Array.isArray(raw.timetable) ? raw.timetable : [];
             agendaStore.events = Array.isArray(raw.events) ? raw.events : [];
+            recordsStore.draft = raw.recordDraft || null;
+            recordsStore.drafts = raw.recordDrafts || {};
             recordsStore.records = Array.isArray(raw.records) ? raw.records : [];
             pomodoroStore.studySessions = Array.isArray(raw.studySessions) ? raw.studySessions : [];
             communitiesStore.communities = Array.isArray(raw.communities) ? raw.communities.map((c) => normalizeCommunity(c)) : [];
@@ -106,6 +123,10 @@ export const useSyncStore = defineStore('sync', {
 
         // 3. Clear data
         resetToDefault() {
+            if (this._persistTimeout) clearTimeout(this._persistTimeout);
+            this._persistTimeout = null;
+            useSoundStore().dispose();
+            useAssistantStore().resetSession();
             this.hydrateStores(defaultStateSnapshot());
             this._currentUid = '';
             this._isHydrated = false;
@@ -133,7 +154,7 @@ export const useSyncStore = defineStore('sync', {
             // ── Fase 1: render instantâneo com cache do localStorage ──
             // O usuário vê os dados em ~0ms enquanto o Firestore ainda carrega.
             const cached = lsFallback();
-            if (cached && (cached.timetable?.length || cached.subjects?.length)) {
+            if (cached) {
                 this.hydrateStores(cached);
                 this._isHydrated = true;
             }
@@ -146,10 +167,12 @@ export const useSyncStore = defineStore('sync', {
                 // Firestore indisponível — mantém dados do LS já hidratados
             }
 
+            if (this._currentUid !== uid) return;
+
             if (raw) {
                 // ── Fase 3: só sobrescreve se Firestore tiver dados mais recentes ──
                 // Protege edições feitas offline (LS mais novo que Firestore)
-                const cachedAt = cached?.savedAt ?? 0;
+                const cachedAt = lsFallback()?.savedAt ?? cached?.savedAt ?? 0;
                 const firestoreAt = raw?.savedAt ?? Infinity;
 
                 if (firestoreAt >= cachedAt) {
@@ -170,6 +193,9 @@ export const useSyncStore = defineStore('sync', {
             // Guard: never save while data hasn't loaded yet
             if (!this._isHydrated || !this._currentUid) return;
 
+            // Keep an immediate per-user recovery copy, even when leaving the page.
+            try { localStorage.setItem(LS_KEY(this._currentUid), JSON.stringify(this.captureState())); } catch { }
+
             // --- Debounce #1 (300ms): Reminder scheduling ---
             // Reminders are cheap to schedule but must stay responsive.
             // Running more often than 300ms is wasteful (user still typing).
@@ -181,10 +207,12 @@ export const useSyncStore = defineStore('sync', {
             // --- Debounce #2 (1500ms): Firebase + LocalStorage save ---
             // Longer window avoids hammering Firestore on every keystroke.
             if (this._persistTimeout) clearTimeout(this._persistTimeout);
+            const ownerUid = this._currentUid;
             this._persistTimeout = setTimeout(async () => {
+                this._persistTimeout = null;
+                if (this._currentUid !== ownerUid || !this._isHydrated) return;
                 const snapshot = this.captureState();
-                try { localStorage.setItem(LS_KEY(this._currentUid), JSON.stringify(snapshot)); } catch { }
-                try { await saveUserData(this._currentUid, snapshot); } catch { }
+                try { await saveUserData(ownerUid, snapshot); } catch { }
             }, 1500);
         },
 
@@ -210,15 +238,17 @@ export const useSyncStore = defineStore('sync', {
 
             subjectsStore.removeSubject(subjectId);
             timetableStore.timetable = timetableStore.timetable.filter((item) => item.subjectId !== subjectId);
-            agendaStore.events = agendaStore.events.filter((item) => item.subjectId !== subjectId);
-            recordsStore.records = recordsStore.records.filter((item) => item.subjectId !== subjectId);
-            pomodoroStore.studySessions = pomodoroStore.studySessions.filter((item) => item.subjectId !== subjectId);
+            agendaStore.events.forEach(item => { if (item.subjectId === subjectId) item.subjectId = ''; });
+            recordsStore.records.forEach(item => { if (item.subjectId === subjectId) item.subjectId = ''; });
+            if (recordsStore.draft?.form.subjectId === subjectId) recordsStore.draft.form.subjectId = '';
+            Object.values(recordsStore.drafts).forEach(draft => { if (draft.form.subjectId === subjectId) draft.form.subjectId = ''; });
+            pomodoroStore.studySessions.forEach(item => { if (item.subjectId === subjectId) item.subjectId = ''; });
 
             if (pomodoroStore.pomodoro.subjectId === subjectId) {
                 pomodoroStore.pomodoro.subjectId = '';
             }
             this.persistState();
-            useAppStore().showToast('Matéria removida com itens relacionados.');
+            useAppStore().showToast('Matéria removida. Seus trabalhos, eventos e estudos foram preservados.');
         },
 
         // Reminders
