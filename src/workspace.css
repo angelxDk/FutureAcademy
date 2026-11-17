@@ -1,0 +1,211 @@
+/* Workspace scale: readable text, clear surfaces and room for the document. */
+:root { --app-border:var(--surface-border); --app-surface:var(--surface); }
+.app-root { font-family:'Manrope',sans-serif; font-size:15px; line-height:1.6; }
+.app-root .text-medium-emphasis { color:var(--app-muted) !important; opacity:1; }
+.app-root .v-container:not(.auth-container) { max-width:1640px; padding:24px 32px 40px; }
+.app-root .app-header { gap:20px; padding:0 0 20px; margin-bottom:24px !important; border-bottom:1px solid var(--surface-border); }
+.app-root .app-header__logo { height:44px; }
+.app-root .app-header__left { gap:12px; }
+.app-root .app-header__title { font-size:18px; letter-spacing:-.3px; }
+.app-root .app-header__subtitle { font-size:13px; margin-top:3px; }
+.app-root .app-header__right { gap:10px; }
+.app-root .app-header__right > .v-btn { font-size:13px; min-height:40px; border-color:var(--surface-border); text-transform:none; letter-spacing:0; }
+.app-root .user-profile-chip { padding:6px 10px; border-color:var(--surface-border); border-radius:10px; font-size:14px; }
+.app-root .theme-toggle { height:40px; width:40px; border-color:var(--surface-border); border-radius:10px; box-shadow:none; }
+.app-root .theme-icon--sun,.app-root .theme-icon--moon { filter:none; }
+.app-root .theme-icon--sun .sun-rays-group { animation:none; }
+.app-root .academy-shell { display:grid; grid-template-columns:220px minmax(0,1fr); gap:28px; align-items:start; }
+.app-root .academy-shell--compact { grid-template-columns:64px minmax(0,1fr); }
+.app-root .academy-sidebar { top:20px; padding:16px 10px; border-radius:14px; background:var(--surface); border-color:var(--surface-border); }
+.app-root .sidebar-heading { padding:0 8px 20px; }
+.app-root .sidebar-heading__copy > span { font-size:11px; letter-spacing:1.2px; }
+.app-root .sidebar-heading__copy strong { font-size:14px; font-weight:650; }
+.app-root .sidebar-toggle { width:32px; height:32px; background:var(--app-bg); border-radius:8px; }
+.app-root .sidebar-group + .sidebar-group { margin-top:22px; }
+.app-root .sidebar-group__title { font-size:11px; letter-spacing:1px; margin:0 10px 8px; }
+.app-root .sidebar-link { min-height:44px; padding:10px; font-size:14px; border-radius:8px; gap:11px; }
+.app-root .sidebar-link .v-icon { font-size:20px !important; opacity:1; }
+.app-root .sidebar-link--active { background:rgb(var(--gold-500) / .14); }
+.app-root .sidebar-footer { margin-top:24px; padding:16px 4px 2px; }
+.app-root .sidebar-footer p,.app-root .sidebar-footer span { font-size:12px; }
+.app-root .glass-card { border-radius:14px; box-shadow:0 3px 12px #00000005; }
+.app-root .binder-toolbar { padding:0 0 20px; }
+.app-root .binder-toolbar__title { gap:12px; }
+.app-root .binder-toolbar__title > .v-icon { padding:10px; border-radius:10px; font-size:20px !important; }
+.app-root .binder-toolbar__title h1 { font-size:24px; font-weight:700; letter-spacing:-.5px; }
+.app-root .binder-toolbar__title p { font-size:14px; margin-top:3px; }
+.app-root .binder-workspace .v-btn { font-size:13px; min-height:36px; font-weight:650; border-radius:8px; letter-spacing:0; }
+.app-root .binder-panel__content { padding:20px; }
+.app-root .binder-panel__bar { padding:10px 14px; }
+.app-root .binder-panel__bar > span { font-size:14px; }
+.app-root .binder-tabs { border-radius:10px; padding:5px; }
+.app-root .binder-tab { padding:10px 13px; font-size:13px; border-radius:7px; }
+.app-root .workspace-resize { opacity:1; font-size:13px; }
+.app-root .sync-status { font-size:12px; margin-bottom:16px; }
+.app-root .workspace-hero { padding:24px; gap:24px; border:1px solid var(--surface-border); border-radius:14px; background:var(--surface); }
+.app-root .workspace-hero h1,.app-root .dashboard-greeting { font-size:clamp(28px,2.5vw,36px); line-height:1.25; font-weight:750; letter-spacing:-1px; }
+.app-root .workspace-hero h1 span,.app-root .dashboard-greeting span { color:var(--app-text); }
+.app-root .workspace-hero > div > .text-medium-emphasis { font-size:14px; line-height:1.7; }
+.app-root .eyebrow { font-size:11px; font-weight:750; letter-spacing:1.5px; margin-bottom:8px; }
+.app-root .overview-grid { gap:16px; }
+.app-root .overview-stat { padding:20px; column-gap:10px; row-gap:12px; }
+.app-root .overview-stat .v-icon { font-size:22px !important; }
+.app-root .overview-stat > span { font-size:14px; }
+.app-root .overview-stat strong { font-size:32px; font-weight:700; letter-spacing:-.8px; }
+.app-root .workspace-columns { gap:22px; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); }
+.app-root .workspace-columns > .grid { gap:22px; }
+.app-root .section-heading { margin-bottom:18px; gap:12px; }
+.app-root .section-heading h2,.app-root .glass-card > h2 { font-size:18px; font-weight:700; letter-spacing:-.3px; }
+.app-root .academic-row { padding:16px 0; gap:12px; }
+.app-root .academic-row__body strong { font-size:15px; font-weight:650; }
+.app-root .academic-row__body span { font-size:13px; }
+.app-root .academic-row .v-chip { font-size:12px; }
+.app-root .empty-copy,.app-root .empty-state p { font-size:14px; }
+.app-root .empty-state h3 { font-size:16px; font-weight:650; }
+.app-root .empty-state { padding:28px 12px; gap:12px; }
+.app-root .study-total { font-size:36px; font-weight:700; }
+.app-root .study-total span { font-size:14px; }
+.app-root .calendar-tile { min-width:46px; border-radius:9px; }
+.app-root .calendar-tile strong { font-size:20px; }
+.app-root .v-field { font-size:15px; border-radius:9px; }
+.app-root .v-label { font-size:14px; opacity:1; }
+.app-root .v-field__outline { --v-field-border-opacity:.4; }
+.app-root .v-field--focused .v-field__outline { --v-field-border-opacity:1; }
+.app-root .p-6 { padding:24px; }
+.app-root .gap-6 { gap:24px; }
+/* Focus keeps the current tool at full width without unmounting other tools. */
+.app-root--focused .app-header,.app-root--focused .academy-sidebar,.app-root--focused .focus-player-region { display:none; }
+.app-root--focused .academy-shell { grid-template-columns:minmax(0,1fr); max-width:1200px; margin:auto; }
+.app-root--focused .binder-workspace { margin-top:8px; }
+.app-root--focused .workspace-hint,.app-root--focused .binder-panel__bar { display:none; }
+/* The desk gives the document most of the window and a single support column. */
+.app-root--desk .app-header { display:none; }
+.app-root--desk .v-container:not(.auth-container) { max-width:none; padding:16px 20px; }
+.app-root--desk .academy-shell { grid-template-columns:64px minmax(0,1fr); gap:20px; }
+.app-root--desk .academy-main { height:calc(100dvh - 32px); display:flex; flex-direction:column; }
+.app-root--desk .academy-sidebar { top:16px; }
+.app-root--desk .sidebar-heading { display:none; }
+.app-root--desk .sync-status { flex:none; margin-bottom:10px; }
+.binder-workspace--desk { display:flex; flex-direction:column; min-height:0; flex:1; }
+.app-root .binder-workspace--desk .binder-toolbar { flex:none; padding-bottom:12px; }
+.app-root .binder-workspace--desk .binder-toolbar__title h1 { font-size:22px; }
+.app-root .binder-workspace--desk .binder-toolbar__title p { font-size:13px; }
+.desk-tools { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:10px; flex:none; }
+.desk-notebook-toggle,.desk-support-tabs button { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; min-height:40px; border:1px solid var(--surface-border); border-radius:8px; font-size:13px; color:var(--app-muted); white-space:nowrap; cursor:pointer; }
+.desk-notebook-toggle { background:var(--surface); color:var(--app-text); }
+.desk-support-tabs { display:flex; gap:6px; overflow-x:auto; min-width:0; margin-left:auto; }
+.desk-support-tabs button { border-color:transparent; }
+.desk-support-tabs button:hover,.desk-support-tabs .desk-support-tab--active { color:rgb(var(--gold-500)); border-color:rgb(var(--gold-500) / .4); background:rgb(var(--gold-500) / .1); }
+.desk-notebook-toggle:focus-visible,.desk-support-tabs button:focus-visible { outline:2px solid rgb(var(--gold-500)); outline-offset:-2px; }
+.app-root .binder-workspace--desk .workspace-resize { flex:none; padding:0; font-size:12px; }
+.app-root .binder-workspace--desk .binder-panel__bar { padding:4px 12px; }
+.app-root .binder-workspace--desk .binder-panels { flex:1; height:auto; min-height:540px; padding-top:0; padding-bottom:0; grid-template-rows:minmax(0,1fr); gap:16px; }
+.app-root .binder-workspace--desk .binder-panels--1 { grid-template-columns:minmax(0,1fr); }
+.app-root .binder-workspace--desk .binder-panel { border:1px solid var(--surface-border); border-radius:12px; background:var(--notebook-paper); overflow:clip; }
+.app-root .binder-workspace--desk .binder-panel__content { padding:20px; overflow:auto; flex:1 1 0; min-height:0; }
+.app-root .binder-workspace--desk .records-section { max-width:none; margin:0; gap:16px; }
+.app-root .binder-workspace--desk .record-writing-card { padding:0; border:0; }
+.app-root .binder-workspace--desk .record-document-heading { padding:0; }
+.app-root .binder-workspace--desk .record-metadata { margin:10px 0 4px; }
+.app-root .binder-workspace--desk .notebook-editor__paper .tiptap { font-size:17px; min-height:max(460px,calc(100dvh - 400px)); }
+.app-root .binder-workspace--desk .notebook-editor__tools button { width:36px; height:36px; }
+.app-root .binder-workspace--desk .notebook-editor__tools .editor-spelling-button { width:auto; }
+.app-root .binder-workspace--desk .notebook-editor__footer { font-size:12px; }
+.app-root .binder-workspace--desk .assistant-intro { display:none; }
+.app-root .binder-workspace--desk .assistant-section { gap:16px; }
+.app-root .binder-workspace--desk .assistant-prompts strong { font-size:14px; }
+.app-root .binder-workspace--desk .assistant-prompts small { font-size:12px; }
+.app-root .binder-workspace--desk .assistant-composer-hint { font-size:12px; }
+.app-root .binder-workspace--desk .workspace-hint { display:none; }
+.app-root--desk .focus-player-region { flex:none; margin-top:12px; padding-top:0; border-top:0; }
+.app-root--desk .spotify-dock__header { padding:8px 14px; }
+.app-root--desk .spotify-dock__copy > span { display:none; }
+.app-root--desk .spotify-dock__copy strong { font-size:13px; }
+.app-root--desk.app-root--focused .academy-shell { grid-template-columns:1fr; max-width:none; }
+@container(max-width:850px) { .app-root .binder-panel .workspace-columns { grid-template-columns:1fr; } }
+@media(max-width:1100px) {
+ .app-root .academy-shell { grid-template-columns:190px minmax(0,1fr); gap:20px; }
+ .app-root .academy-shell--compact,.app-root--desk .academy-shell { grid-template-columns:60px minmax(0,1fr); }
+ .app-root .workspace-columns { grid-template-columns:1fr; }
+ .app-root .v-container:not(.auth-container) { padding:18px; }
+ .app-root--focused .academy-shell { grid-template-columns:1fr; }
+ .app-root--desk .academy-main { height:calc(100dvh - 36px); }
+ .desk-tools { flex-wrap:wrap; }
+ .desk-support-tabs { flex:1; }
+}
+@media(max-width:760px) {
+ .app-root .v-container:not(.auth-container) { padding:14px; }
+ .app-root .app-header { gap:14px; margin-bottom:18px !important; padding-bottom:16px; }
+ .app-root .app-header__right { gap:8px; }
+ .app-root .app-header__right .user-profile-name { display:none; }
+ .app-root .app-header__right > .v-btn { font-size:12px; }
+ .app-root .academy-shell,.app-root .academy-shell--compact { display:block; }
+ .app-root .academy-sidebar { padding:8px; margin-bottom:16px; border-radius:12px; }
+ .app-root .sidebar-heading,.app-root .sidebar-footer { display:none; }
+ .app-root .sidebar-navigation,.app-root .academy-sidebar--collapsed .sidebar-navigation { display:flex; }
+ .app-root .sidebar-link { padding:9px 12px; gap:8px; }
+ .app-root .sidebar-link > span:not(.sidebar-active-dot) { display:inline; }
+ .app-root .sidebar-link .sidebar-active-dot { display:none; }
+ .app-root .binder-toolbar { align-items:flex-start; gap:14px; flex-wrap:wrap; }
+ .app-root .binder-toolbar__title h1 { font-size:22px; }
+ .app-root .workspace-hero { flex-direction:column; align-items:flex-start; padding:20px; }
+ .app-root .overview-stat { padding:17px; }
+ .app-root .overview-stat > span { font-size:13px; }
+ .app-root .p-6 { padding:20px; }
+ .app-root--desk .academy-sidebar,.app-root--focused .academy-sidebar { display:none; }
+ .app-root--desk .academy-main { height:auto; display:block; }
+ .app-root .binder-workspace--desk .binder-panels { display:flex; flex-direction:column; min-height:0; }
+ .app-root .binder-workspace--desk .binder-panel__content { flex:none; overflow:visible; padding:16px; }
+ .app-root .binder-workspace--desk .binder-panel { overflow:visible; }
+ .app-root .binder-workspace--desk .notebook-editor__paper .tiptap { min-height:460px; }
+ .desk-tools { align-items:flex-start; flex-direction:column; gap:10px; }
+ .desk-support-tabs { width:100%; margin-left:0; }
+ .desk-support-tabs button { font-size:13px; padding:10px; }
+ .app-root .binder-workspace--desk .workspace-resize { display:none; }
+ .app-root .binder-workspace--desk .notebook-editor__tools { position:static; }
+}
+.record-library { display:grid; gap:10px; }
+.record-library-item { padding:17px 20px; }
+.record-library-item__main { display:flex; align-items:center; gap:14px; }
+.record-library-item__icon { width:38px; height:42px; display:grid; place-items:center; background:rgb(var(--gold-500) / .07); border:1px solid rgb(var(--gold-500) / .1); border-radius:8px; color:rgb(var(--gold-500)); flex-shrink:0; }
+.record-library-item__copy { flex:1; min-width:0; }
+.record-title { font-family:inherit; font-size:15px; font-weight:650; line-height:1.6; color:var(--app-text); text-align:left; cursor:pointer; }
+.record-title:hover { color:rgb(var(--gold-500)); }
+.record-library-item__meta { display:flex; flex-wrap:wrap; gap:6px 14px; color:var(--app-muted); font-size:13px; margin-top:5px; }
+.record-library-item__meta > span + span::before { content:'·'; margin-right:10px; opacity:.6; }
+.record-library-item__preview { font-size:14px; color:var(--app-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:7px 0 0; line-height:1.7; }
+.record-status--done { color:rgb(var(--v-theme-success)); }
+.record-delivery { border-top:1px solid var(--surface-border); margin-top:15px; padding-top:16px; display:grid; gap:14px; }
+.record-delivery__fields { display:grid; grid-template-columns:120px minmax(0,1fr); gap:12px; }
+.app-root--focused .record-writing-card { border-color:transparent; background:transparent; padding:0; box-shadow:none; }
+@media(max-width:600px) { .record-library-item { padding:14px; } .record-library-item__main { gap:10px; } .record-library-item__icon { display:none; } .record-library-item__main > .v-btn:not(.v-btn--icon) { display:none; } .record-delivery__fields { grid-template-columns:100px minmax(0,1fr); } }
+
+/* Full-page desk: saved quadrants migrate to tabs, splitting is explicit. */
+.app-root .records-section,.app-root .record-writing-card,.app-root .record-writing-card .v-form,.app-root .record-writing-card .v-row,.app-root .record-writing-card .v-col,.app-root .notebook-editor,.app-root .notebook-editor__paper { min-width:0; max-width:100%; }
+.app-root .record-writing-card .tiptap { white-space:pre-wrap; overflow-wrap:anywhere; word-break:normal; min-width:0; max-width:100%; }
+.app-root .record-writing-card .tiptap table { width:100%; table-layout:fixed; }
+.app-root .record-writing-card .tiptap img { max-width:100%; height:auto; }
+.app-root .records-section > .flex { min-width:0; flex-wrap:wrap; }
+.app-root .records-section > .flex .v-btn { max-width:100%; }
+.app-root .records-section > .flex .v-btn__content { overflow:hidden; text-overflow:ellipsis; }
+.app-root .records-section { width:100%; grid-template-columns:minmax(0,1fr); }
+.app-root .records-section > * { min-width:0; }
+.app-root .record-writing-card { width:100%; box-sizing:border-box; }
+.app-root .record-writing-card .v-input,.app-root .record-writing-card .v-field,.app-root .record-writing-card .v-field__field,.app-root .record-writing-card .v-field__input { min-width:0; }
+.app-root .record-writing-card [class*="v-col"] { min-width:0; }
+.app-root .record-filters { grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr); }
+@container(max-width:850px) { .app-root .record-filters { grid-template-columns:minmax(0,1fr); } }
+.app-root .focus-player-region { width:min(420px,100%); max-width:100%; margin-left:auto; }
+.app-root--desk .academy-sidebar { display:none; }
+.app-root--desk .academy-shell,.app-root--desk .academy-shell--compact { grid-template-columns:minmax(0,1fr); gap:0; max-width:none; }
+.app-root--desk .v-container:not(.auth-container) { padding:8px 12px; }
+.app-root--desk .academy-main { height:calc(100dvh - 16px); }
+.app-root .binder-workspace--desk .binder-toolbar { padding-bottom:6px; min-height:38px; }
+.app-root .binder-workspace--desk .binder-toolbar__title h1 { font-size:17px; }
+.app-root .binder-workspace--desk .binder-toolbar__title p { display:none; }
+.app-root .binder-workspace--desk .binder-toolbar__title > .v-icon { padding:0; background:none; }
+.app-root .binder-workspace--desk .binder-panels { min-height:0; }
+.app-root .binder-workspace--desk .binder-panel__content { padding:12px 16px; }
+.app-root .binder-workspace--desk .desk-tools { gap:10px; padding-bottom:8px; }
+.app-root .binder-workspace--desk .desk-support-tabs { margin-left:0; flex:1; }
+@media(max-width:760px) { .app-root--desk .academy-main { height:auto; } .app-root .binder-workspace--desk .binder-panels { min-height:65dvh; } .app-root .binder-workspace--desk .desk-tools { flex-direction:row; } .app-root .binder-workspace--desk .desk-support-tabs { flex-basis:100%; } }

@@ -22,6 +22,7 @@ async function getSpotifyAccessToken(forceRefresh = false) {
 
     const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
+        signal: AbortSignal.timeout(15000),
         headers: {
             Authorization: `Basic ${basic}`,
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -51,6 +52,7 @@ async function searchSpotifyTracks(query, limit = 5, forceRefresh = false) {
     spotifyUrl.searchParams.set('market', 'BR');
 
     const response = await fetch(spotifyUrl.toString(), {
+        signal: AbortSignal.timeout(15000),
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -77,10 +79,11 @@ async function searchSpotifyTracks(query, limit = 5, forceRefresh = false) {
 }
 
 export const searchTracks = async (req, res) => {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido.' });
     try {
         const query = String(req.query.q || '').trim();
         const limit = Math.min(10, Math.max(1, Number(req.query.limit || 5)));
-        if (!query) {
+        if (!query || query.length > 200 || !Number.isFinite(limit)) {
             return res.status(400).json({ error: 'Informe o parâmetro q com o termo de busca.' });
         }
 

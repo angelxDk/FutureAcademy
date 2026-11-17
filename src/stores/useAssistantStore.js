@@ -1,3 +1,4 @@
+import { apiFetch } from '../services/api';
 import { defineStore } from 'pinia';
 import { loadBrowserAi, interruptBrowserAi, releaseBrowserAi } from '../services/browserAi';
 import { useSyncStore } from './useSyncStore';
@@ -41,7 +42,7 @@ export const useAssistantStore = defineStore('study-assistant', {
           }
         } else {
           controller = new AbortController();
-          const response = await fetch('/api/study-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: this.ollamaModel, messages }), signal: controller.signal });
+          const response = await apiFetch(this.provider === 'cloud' ? '/api/openai' : '/api/study-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.provider === 'cloud' ? { prompt, recentHistory: messages.slice(0, -1).map(m => `${m.role}: ${m.content}`).join('\n') } : { model: this.ollamaModel, messages }), signal: controller.signal });
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(data.error || 'Não foi possível consultar o Ollama.');
           if (token === generationId) { const target = this.messages.find(m => m.id === reply.id); if (target) target.content = data.text; }

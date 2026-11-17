@@ -36,3 +36,12 @@ temp/
 .vscode/*
 !.vscode/extensions.json
 env
+
+# Test and emulator artifacts
+playwright-report/
+test-results/
+*-debug.log
+supabase/.temp/
+supabase/.branches/
+.vercel
+.env*

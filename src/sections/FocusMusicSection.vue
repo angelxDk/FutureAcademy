@@ -142,18 +142,18 @@ const loadCustomPlaylist = () => {
 .music-import { display:flex; align-items:start; gap:12px; padding:20px; margin-bottom:20px; }
 .music-import .v-input { min-width:0; }
 .playlist-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
-.playlist-card { padding:24px; border:1px solid var(--surface-border); border-radius:18px; background:var(--surface); color:var(--app-text); display:flex; flex-direction:column; text-align:left; cursor:pointer; min-width:0; transition:border-color .18s, background .18s; font:inherit; }
+.playlist-card { padding:16px; border:1px solid var(--surface-border); border-radius:18px; background:var(--surface); color:var(--app-text); display:flex; flex-direction:column; text-align:left; cursor:pointer; min-width:0; transition:border-color .18s, background .18s; font:inherit; }
 .playlist-card:hover { border-color:rgb(var(--gold-500) / .55); }
 .playlist-card:focus-visible { outline:3px solid rgb(var(--gold-500) / .65); outline-offset:3px; }
 .playlist-card-active { border-color:rgb(var(--gold-500) / .65); background:linear-gradient(135deg,rgb(var(--gold-500) / .08),transparent),var(--surface); }
-.playlist-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+.playlist-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
 .playlist-symbol { width:46px; height:46px; border-radius:12px; }
 .playlist-index { font-size:12px; opacity:.4; font-variant-numeric:tabular-nums; }
 .playlist-title { display:block; font-size:17px; line-height:1.5; overflow-wrap:anywhere; }
-.playlist-description { display:block; font-size:13px; line-height:1.75; opacity:.68; margin:8px 0 18px; flex:1; }
-.playlist-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px; }
+.playlist-description { display:block; font-size:13px; line-height:1.75; opacity:.68; margin:6px 0 10px; flex:1; }
+.playlist-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
 .playlist-tags > span { font-size:10px; line-height:1.5; padding:4px 9px; border-radius:6px; background:rgb(var(--gold-500) / .07); opacity:.8; }
-.playlist-action { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; padding-top:15px; border-top:1px solid var(--surface-border); }
+.playlist-action { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; padding-top:10px; border-top:1px solid var(--surface-border); }
 .playlist-card-active .playlist-action { color:rgb(var(--gold-400)); }
 .playlist-arrow { margin-left:auto; }
 .music-footnote { font-size:11px; opacity:.55; margin:16px 4px 0; line-height:1.6; }

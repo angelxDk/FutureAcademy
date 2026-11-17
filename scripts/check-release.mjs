@@ -1,0 +1,11 @@
+import 'dotenv/config';
+const required = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'APP_URL'];
+const issues = [];
+for (const name of required) if (!process.env[name] || /your_|example|SUA_CHAVE/.test(process.env[name])) issues.push(`Configure ${name}.`);
+if (process.env.VITE_SUPABASE_URL && process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL !== process.env.SUPABASE_URL) issues.push('Frontend e backend devem usar o mesmo projeto Supabase.');
+if (process.env.VITE_OPENAI_API_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY) issues.push('Remova segredos com prefixo VITE_; eles pertencem apenas ao backend.');
+if (process.env.ENABLE_PAID_AI === 'true') for (const name of ['OPENAI_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_PRO_PRICE_ID', 'STRIPE_WEBHOOK_SECRET']) if (!process.env[name]) issues.push(`Configure ${name} antes de ativar o Pro.`);
+if (process.env.APP_URL && !process.env.APP_URL.startsWith('https://')) issues.push('APP_URL deve usar HTTPS em produção.');
+for (const issue of issues) console.error(issue);
+if (issues.length) process.exitCode = 1;
+else console.log('Variáveis presentes. Valide SQL, Auth, recuperação, isolamento e cobrança antes de publicar.');

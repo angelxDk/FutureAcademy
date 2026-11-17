@@ -4,7 +4,7 @@
       <div class="entrance-topline"><a class="entrance-wordmark" href="/" aria-label="Future Academy, início"><img src="/academy-emblem-transparent.png" alt="" width="64" height="48" /><span>FUTURE <b>ACADEMY</b><small>FICHÁRIO ACADÊMICO</small></span></a><router-link v-if="signedIn" class="entrance-return" to="/">Voltar ao meu fichário <span aria-hidden="true">↗</span></router-link></div>
       <div class="entrance-layout">
         <section class="agora-scene" aria-label="Apresentação da Future Academy">
-          <img class="agora-scene__art" src="../assets/agora-futura.png" alt="Ágora de mármore com colunas gregas e órbitas douradas sob um céu noturno." fetchpriority="high" decoding="async" />
+          <img class="agora-scene__art" src="../assets/agora-futura.webp" alt="Ágora de mármore com colunas gregas e órbitas douradas sob um céu noturno." fetchpriority="high" decoding="async" />
           <HolographicGlobe />
           <div class="agora-scene__shade" aria-hidden="true" />
           <div class="agora-meteors" aria-hidden="true"><span v-for="star in 5" :key="star" class="agora-meteor" :style="{ '--star': star }" /></div>
@@ -16,8 +16,13 @@
             <span class="entrance-kicker"><v-icon icon="mdi-school-outline" size="19" />Seu espaço de estudo</span>
             <h1 id="entrance-form-title">{{ mode === 'login' ? 'Seu ambiente de aprendizado.' : 'Comece seu próximo capítulo.' }}</h1>
             <p class="entrance-form-description">{{ mode === 'login' ? 'Acesse seu fichário e continue de onde parou.' : 'Crie sua conta para organizar aulas, anotações e trabalhos.' }}</p>
-            <div class="entrance-social"><v-btn class="entrance-google" variant="outlined" block height="48" :disabled="busy" @click="$emit('google')"><v-icon icon="mdi-google" size="18" class="mr-3" />Continuar com Google</v-btn><v-btn class="entrance-facebook" variant="outlined" block height="48" :disabled="busy" @click="$emit('facebook')"><v-icon icon="mdi-facebook" size="17" class="mr-2" />Continuar com Facebook</v-btn></div>
-            <div class="entrance-divider"><span />ou use seu e-mail<span /></div>
+            <div v-if="feedback" class="entrance-feedback" :class="`entrance-feedback--${feedbackType}`" :role="feedbackType === 'error' ? 'alert' : 'status'" aria-live="polite">
+              <p>{{ feedback }}</p>
+              <button v-if="canResendConfirmation && email.trim().toLowerCase() === confirmationEmail.toLowerCase()" type="button" :disabled="busy" @click="emit('resend-confirmation', email)">Reenviar confirmação de e-mail</button>
+              <router-link v-if="recoveryRequested" to="/redefinir-senha">Inserir código e criar nova senha</router-link>
+            </div>
+            <div v-if="providers.google || providers.facebook" class="entrance-social"><v-btn v-if="providers.google" class="entrance-google" variant="outlined" block height="48" :disabled="busy" @click="$emit('google')"><v-icon icon="mdi-google" size="18" class="mr-3" />Continuar com Google</v-btn><v-btn v-if="providers.facebook" class="entrance-facebook" variant="outlined" block height="48" :disabled="busy" @click="$emit('facebook')"><v-icon icon="mdi-facebook" size="17" class="mr-2" />Continuar com Facebook</v-btn></div>
+            <div v-if="providers.google || providers.facebook" class="entrance-divider"><span />ou use seu e-mail<span /></div>
             <v-form ref="formRef" @submit.prevent="submit" class="entrance-form" :disabled="busy">
               <v-text-field v-if="mode === 'register'" v-model.trim="name" label="Seu nome" autocomplete="name" :rules="[v => !!String(v || '').trim() || 'Como podemos chamar você?']" variant="outlined" density="comfortable" color="#d5b877" hide-details="auto" />
               <v-text-field v-model.trim="email" label="E-mail" prepend-inner-icon="mdi-email-outline" type="email" autocomplete="email" :rules="emailRules" variant="outlined" density="comfortable" color="#d5b877" hide-details="auto" placeholder="voce@exemplo.com" />
@@ -25,6 +30,9 @@
               <v-text-field v-if="mode === 'register'" v-model="confirm" label="Confirme sua senha" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" :rules="[v => v === password || 'As senhas precisam ser iguais.']" variant="outlined" density="comfortable" color="#d5b877" hide-details="auto" />
               <v-btn type="submit" class="entrance-submit" block height="50" variant="flat" :loading="busy" :disabled="busy" append-icon="mdi-arrow-right">{{ mode === 'login' ? 'Entrar' : 'Criar conta' }}</v-btn>
             </v-form>
+            <v-btn v-if="mode === 'login'" variant="text" size="small" :disabled="busy" @click="emit('reset-password', email)">Esqueci minha senha</v-btn>
+            <p v-if="mode === 'login'" class="entrance-recovery-help">Se sua senha anterior não funcionar, use <strong>Esqueci minha senha</strong> para recuperar o acesso.</p>
+            <p class="entrance-switch"><router-link to="/conhecer">Conheça o fichário</router-link> · <router-link to="/privacidade">Privacidade</router-link> · <router-link to="/termos">Termos</router-link></p>
             <p class="entrance-switch">{{ mode === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?' }} <button type="button" :disabled="busy" @click="toggleMode">{{ mode === 'login' ? 'Criar uma conta' : 'Entrar na minha conta' }}</button></p>
 
           </div>
@@ -35,15 +43,25 @@
   </v-theme-provider>
 </template>
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { availableSocialProviders } from '../services/supabase';
 import HolographicGlobe from './HolographicGlobe.vue';
-defineProps({ signedIn: { type: Boolean, default: false }, busy: { type: Boolean, default: false } });
-const emit = defineEmits(['google', 'facebook', 'submit']);
+defineProps({
+  signedIn: { type: Boolean, default: false }, busy: { type: Boolean, default: false },
+  feedback: { type: String, default: '' }, feedbackType: { type: String, default: 'info' },
+  canResendConfirmation: { type: Boolean, default: false }, confirmationEmail: { type: String, default: '' },
+  recoveryRequested: { type: Boolean, default: false }
+});
+const emit = defineEmits(['google', 'facebook', 'submit', 'reset-password', 'resend-confirmation', 'clear-feedback']);
+const providers = ref({ google: false, facebook: false });
+let active = true;
+onMounted(async () => { const available = await availableSocialProviders(); if (active) providers.value = available; });
+onUnmounted(() => { active = false; });
 const mode = ref('login'), name = ref(''), email = ref(''), password = ref(''), confirm = ref(''), showPassword = ref(false), formRef = ref(null);
 const emailRules = [v => !!String(v || '').trim() || 'Informe seu e-mail.', v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || '') || 'Confira o endereço de e-mail.'];
-const passwordRules = computed(() => [v => !!v || 'Informe sua senha.', v => mode.value !== 'register' || String(v || '').length >= 6 || 'Use pelo menos 6 caracteres.']);
+const passwordRules = computed(() => [v => !!v || 'Informe sua senha.', v => mode.value !== 'register' || String(v || '').length >= 10 || 'Use pelo menos 10 caracteres.']);
 async function submit() { const validation = await formRef.value?.validate(); if (!validation?.valid) return; emit('submit', { mode: mode.value, name: name.value, email: email.value, password: password.value, confirm: confirm.value }); }
-function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'login'; confirm.value = ''; formRef.value?.resetValidation(); }
+function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'login'; confirm.value = ''; formRef.value?.resetValidation(); emit('clear-feedback'); }
 </script>
 <style scoped>
 .academy-entrance { --entrance-gold:#d9bd80; --entrance-soft:#aeb6bf; min-height:100dvh; background:#0e1620; color:#ede7d8; padding:28px 48px 20px; }
@@ -62,6 +80,14 @@ function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'logi
 .entrance-kicker { display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; color:var(--entrance-gold); margin-bottom:18px; }
 .entrance-form-area h1 { font-size:32px; font-weight:600; letter-spacing:-1.2px; line-height:1.3; }
 .entrance-form-description { margin:12px 0 32px; font-size:14px; line-height:1.7; color:var(--entrance-soft); }
+.entrance-feedback { margin:0 0 22px; padding:14px 16px; border:1px solid #6f8fa6; border-radius:10px; color:#e4edf4; background:#1d3446; font-size:13px; line-height:1.65; overflow-wrap:anywhere; }
+.entrance-feedback--error { border-color:#d89588; background:#432b30; color:#ffe3dc; }
+.entrance-feedback--success { border-color:#74bda5; background:#1b3934; }
+.entrance-feedback p { margin:0; }
+.entrance-feedback button,.entrance-feedback a { display:block; margin-top:10px; color:var(--entrance-gold); text-decoration:underline; text-underline-offset:3px; }
+.entrance-feedback button:disabled { opacity:.5; }
+.entrance-feedback button:focus-visible,.entrance-feedback a:focus-visible { outline:2px solid currentColor; outline-offset:4px; }
+.entrance-recovery-help { color:var(--entrance-soft); font-size:12px; line-height:1.65; margin:10px 0 0; }
 .entrance-social { display:grid; gap:10px; }
 .entrance-social .v-btn { font-size:13px; text-transform:none; letter-spacing:0; border-radius:10px; }
 .entrance-google { background:#192632 !important; border-color:#75808c70 !important; color:#ede7d8 !important; }

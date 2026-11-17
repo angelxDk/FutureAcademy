@@ -1,7 +1,7 @@
 <template>
   <section class="grid gap-6 records-section">
     <div class="record-document-heading"><div><p class="eyebrow">PÁGINA EM EDIÇÃO</p><p class="text-sm text-medium-emphasis">{{ wordCount }} palavras · {{ draftMessage }}</p></div><v-btn to="/pomodoro" variant="text" size="small" prepend-icon="mdi-timer-outline">Concentrar</v-btn></div>
-    <div v-if="Object.keys(recordsStore.drafts).length > 0" class="flex flex-wrap gap-2"><span class="text-xs text-medium-emphasis">Rascunhos em aberto:</span><v-btn v-for="(item, key) in recordsStore.drafts" :key="key" size="x-small" variant="tonal" @click="restoreDraft(key)">{{ item.form.title || 'Página sem título' }}</v-btn></div>
+    <div v-if="Object.keys(visibleDrafts).length > 0" class="flex flex-wrap gap-2"><span class="text-xs text-medium-emphasis">Rascunhos em aberto:</span><v-btn v-for="(item, key) in visibleDrafts" :key="key" size="x-small" variant="tonal" @click="restoreDraft(key)">{{ item.form.title || 'Página sem título' }}</v-btn></div>
     <div class="glass-card p-6 record-writing-card">
 
       <v-form @submit.prevent="submitRecord">
@@ -55,43 +55,29 @@
       </v-form>
     </div>
 
-    <div class="glass-card p-6">
-      <div class="section-heading"><h2 class="text-xl">Seus trabalhos e anotações</h2><span class="text-sm text-medium-emphasis">{{ filteredRecords.length }} resultados</span></div>
-      <div class="record-filters"><v-text-field v-model="search" label="Buscar título ou conteúdo" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details clearable /><v-select v-model="filterStatus" :items="[{ title: 'Todos os status', value: '' }, ...statusOptions]" label="Status" variant="outlined" hide-details /><v-select v-model="filterSubject" :items="[{ id: '', name: 'Todas as disciplinas' }, ...subjectsStore.subjects]" item-title="name" item-value="id" label="Disciplina" variant="outlined" hide-details /></div>
-      <p v-if="!filteredRecords.length" class="empty-copy">{{ recordsStore.records.length ? 'Nenhum trabalho corresponde aos filtros.' : 'Seu primeiro trabalho começa no editor acima.' }}</p>
-    </div>
-    <v-row>
-      <v-col v-for="record in filteredRecords" :key="record.id" cols="12" lg="6">
-        <div class="glass-card p-5" style="height: 100%">
-          <h3 class="text-base font-bold text-high-emphasis mb-2">{{ record.title }}</h3>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Matéria</span> {{ subjectNameFormatter(record.subjectId) }}</p>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Data limite</span> {{ dateFormatter(record.dueDate) }}</p>
-          <p class="text-sm text-medium-emphasis mb-1"><span class="font-semibold text-high-emphasis">Status</span> {{ statusOptions.find(s => s.value === record.status)?.title || record.status }}</p>
-          <p class="text-sm text-medium-emphasis mb-3"><span class="font-semibold text-high-emphasis">Minutos</span> {{ record.studyMinutes || 0 }}</p>
-
-          <div class="record-preview mb-4">
-            <p class="text-xs text-medium-emphasis mb-1 font-semibold uppercase tracking-wider">Prévia</p>
-            <p class="mb-0 text-sm">{{ preview(record) || 'Sem conteúdo ainda.' }}</p>
+    <div v-if="!workspace.focusMode" class="record-library">
+      <div class="glass-card p-6">
+        <div class="section-heading"><h2 class="text-xl">Seus trabalhos e anotações</h2><span class="text-sm text-medium-emphasis">{{ filteredRecords.length }} resultados</span></div>
+        <div class="record-filters"><v-text-field v-model="search" label="Buscar título ou conteúdo" prepend-inner-icon="mdi-magnify" variant="outlined" density="compact" hide-details clearable /><v-select v-model="filterStatus" :items="[{ title: 'Todos os status', value: '' }, ...statusOptions]" label="Status" variant="outlined" density="compact" hide-details /><v-select v-model="filterSubject" :items="[{ id: '', name: 'Todas as disciplinas' }, ...subjectsStore.subjects]" item-title="name" item-value="id" label="Disciplina" variant="outlined" density="compact" hide-details /></div>
+        <p v-if="!filteredRecords.length" class="empty-copy">{{ recordsStore.records.length ? 'Nenhum trabalho corresponde aos filtros.' : 'Seu primeiro trabalho começa no editor acima.' }}</p>
+      </div>
+      <article v-for="record in filteredRecords" :key="record.id" class="glass-card record-library-item">
+        <div class="record-library-item__main">
+          <span class="record-library-item__icon"><v-icon :icon="record.type === 'anotacao' ? 'mdi-note-text-outline' : record.type === 'prova' ? 'mdi-clipboard-text-outline' : 'mdi-file-document-outline'" size="20" /></span>
+          <div class="record-library-item__copy">
+            <button type="button" class="record-title" @click="startRecordEdit(record.id)">{{ record.title }}</button>
+            <div class="record-library-item__meta"><span>{{ subjectNameFormatter(record.subjectId) }}</span><span v-if="record.dueDate">{{ dateFormatter(record.dueDate) }}</span><span :class="{ 'record-status--done': record.status === 'concluido' }">{{ statusOptions.find(s => s.value === record.status)?.title || 'A fazer' }}</span></div>
+            <p class="record-library-item__preview">{{ preview(record) || 'Sem conteúdo ainda.' }}</p>
           </div>
-
-          <v-row dense>
-            <v-col cols="12" md="4">
-              <v-select v-model="record.exportFormat" :items="['md', 'docx', 'pdf']" label="Formato" variant="outlined" density="compact" bg-color="transparent" color="primary" hide-details />
-            </v-col>
-            <v-col cols="12" md="8">
-              <v-text-field v-model.trim="record.emailTo" label="E-mail destino" variant="outlined" density="compact" bg-color="transparent" color="primary" hide-details />
-            </v-col>
-          </v-row>
-
-          <div class="flex flex-wrap gap-2 mt-4">
-            <v-btn size="small" color="primary" variant="outlined" @click="startRecordEdit(record.id)">Editar</v-btn>
-            <v-btn size="small" color="primary" variant="outlined" @click="handleExportRecord(record)">Exportar</v-btn>
-            <v-btn size="small" color="secondary" variant="outlined" @click="handleSendRecordEmail(record)">Enviar e-mail</v-btn>
-            <v-btn size="small" color="error" variant="outlined" @click="deleteId = record.id">Remover</v-btn>
-          </div>
+          <v-btn size="small" variant="text" @click="startRecordEdit(record.id)">Editar</v-btn>
+          <v-btn icon="mdi-dots-horizontal" size="small" variant="text" :aria-label="`Opções de ${record.title}`" @click="expandedRecord = expandedRecord === record.id ? '' : record.id" :aria-expanded="expandedRecord === record.id" />
         </div>
-      </v-col>
-    </v-row>
+        <div v-if="expandedRecord === record.id" class="record-delivery">
+          <div class="record-delivery__fields"><v-select v-model="record.exportFormat" :items="['md', 'docx', 'pdf']" label="Formato" variant="outlined" density="compact" hide-details /><v-text-field v-model.trim="record.emailTo" label="E-mail destino" variant="outlined" density="compact" hide-details /></div>
+          <div class="flex flex-wrap gap-2"><v-btn size="small" variant="tonal" @click="handleExportRecord(record)">Exportar</v-btn><v-btn size="small" variant="text" @click="handleSendRecordEmail(record)">Enviar e-mail</v-btn><v-btn size="small" color="error" variant="text" @click="deleteId = record.id">Remover</v-btn></div>
+        </div>
+      </article>
+    </div>
     <v-dialog v-model="deleteDialog" max-width="420"><v-card title="Remover trabalho?" text="O conteúdo deste trabalho será excluído. Exporte uma cópia se quiser guardá-lo."><v-card-actions><v-btn @click="deleteId = ''">Cancelar</v-btn><v-btn color="error" @click="removeRecord(deleteId); deleteId = ''">Remover trabalho</v-btn></v-card-actions></v-card></v-dialog>
   </section>
 </template>
@@ -138,8 +124,9 @@ const draft = recordsStore.draft;
 const blankPage = () => ({ type: route.query.new ? 'trabalho' : 'anotacao', dueDate: route.query.new ? todayISO() : '' });
 const recordForm = ref(createRecordForm({ ...blankPage(), ...(draft?.form || {}) }));
 const recordEditId = ref(draft?.editId || '');
+const visibleDrafts = computed(() => workspace.deskMode ? Object.fromEntries(Object.entries(recordsStore.drafts).filter(([key]) => key !== (recordEditId.value || '__new__'))) : recordsStore.drafts);
 const recordEditorHtml = ref(draft?.html || '<p></p>');
-const search = ref(''), filterStatus = ref(''), filterSubject = ref(''), deleteId = ref('');
+const search = ref(''), filterStatus = ref(''), filterSubject = ref(''), deleteId = ref(''), expandedRecord = ref('');
 const deleteDialog = computed({ get: () => !!deleteId.value, set: value => { if (!value) deleteId.value = ''; } });
 const preview = record => htmlToPlainText(record.contentHtml || plainTextToHtml(record.content || ''));
 const wordCount = computed(() => htmlToPlainText(recordEditorHtml.value).split(/\s+/).filter(Boolean).length);

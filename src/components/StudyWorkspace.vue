@@ -1,20 +1,29 @@
 <template>
-  <div class="binder-workspace" :class="{ 'binder-workspace--multiple': workspace.visible.length > 1 }">
+  <div class="binder-workspace" :class="{ 'binder-workspace--multiple': workspace.visible.length > 1, 'binder-workspace--desk': workspace.deskMode }">
     <div class="binder-toolbar">
-      <div class="binder-toolbar__title"><v-icon icon="mdi-notebook-outline" size="20" /><div><h1>{{ toolInfo(workspace.active).label }}</h1><p>{{ toolDescription }}</p></div></div>
+      <div class="binder-toolbar__title"><v-icon :icon="workspace.deskMode ? 'mdi-desk' : toolInfo(workspace.active).icon" size="20" /><div><h1>{{ workspace.deskMode ? 'Mesa de estudo' : toolInfo(workspace.active).label }}</h1><p>{{ workspace.deskMode ? 'Uma ferramenta por vez, com espaço para estudar.' : toolDescription }}</p></div></div>
       <div class="flex gap-2 items-center flex-wrap">
-        <v-btn size="small" variant="text" prepend-icon="mdi-view-grid-outline" @click="workspace.studyPreset(); workspace.compactSidebar = true">Mesa de estudo</v-btn>
-        <v-btn v-if="workspace.visible.length > 1" size="small" variant="text" @click="workspace.solo()">Uma página</v-btn>
-        <v-menu :close-on-content-click="true"><template #activator="{ props }"><v-btn v-bind="props" size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" :disabled="workspace.visible.length >= 4">Abrir ao lado</v-btn></template><v-list density="compact"><v-list-item v-for="tool in availableTools" :key="tool.id" :title="tool.label" :prepend-icon="tool.icon" @click="workspace.open(tool.id, true)" /></v-list></v-menu>
+        <v-btn size="small" :variant="workspace.focusMode ? 'tonal' : 'text'" :prepend-icon="workspace.focusMode ? 'mdi-arrow-collapse' : 'mdi-focus-field'" :aria-pressed="workspace.focusMode" @click="workspace.focusMode = !workspace.focusMode">{{ workspace.focusMode ? 'Sair do foco' : 'Modo foco' }}</v-btn>
+        <v-btn v-if="workspace.deskMode" size="small" variant="tonal" prepend-icon="mdi-arrow-left" @click="exitDesk">Sair da mesa</v-btn>
+        <template v-else>
+          <v-btn size="small" variant="tonal" color="primary" prepend-icon="mdi-desk" @click="workspace.studyPreset()">Mesa de estudo</v-btn>
+          <v-btn v-if="workspace.visible.length > 1" size="small" variant="text" @click="workspace.solo()">Uma página</v-btn>
+          <v-menu :close-on-content-click="true"><template #activator="{ props }"><v-btn v-bind="props" size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" :disabled="workspace.visible.length >= 2">Abrir ao lado</v-btn></template><v-list density="compact"><v-list-item v-for="tool in availableTools" :key="tool.id" :title="tool.label" :prepend-icon="tool.icon" @click="workspace.open(tool.id, true)" /></v-list></v-menu>
+        </template>
       </div>
     </div>
-    <nav v-if="workspace.visible.length > 1" class="binder-tabs" aria-label="Páginas abertas do fichário">
+    <div v-if="workspace.deskMode && !workspace.focusMode" class="desk-tools">
+      <nav class="desk-support-tabs" aria-label="Ferramentas da mesa" role="tablist"><button v-for="id in deskTools" :key="id" type="button" role="tab" :aria-selected="workspace.active === id" :class="{ 'desk-support-tab--active': workspace.active === id }" @click="activate(id)"><v-icon :icon="toolInfo(id).icon" size="18" />{{ toolInfo(id).label }}</button></nav>
+      <button class="desk-notebook-toggle" type="button" :aria-pressed="workspace.deskSplit" @click="workspace.setDeskSplit(!workspace.deskSplit)">{{ workspace.deskSplit ? 'Uma ferramenta' : 'Dividir tela' }}</button>
+      <div v-if="workspace.deskSplit" class="workspace-resize"><label for="desk-pane-width">Caderno</label><input id="desk-pane-width" v-model.number="workspace.ratio" type="range" min="50" max="70" aria-label="Espaço do caderno" /></div>
+    </div>
+    <nav v-else-if="workspace.visible.length > 1 && !workspace.focusMode" class="binder-tabs" aria-label="Páginas abertas do fichário">
       <button v-for="id in workspace.visible" :key="id" class="binder-tab" :class="{ 'binder-tab--active': workspace.active === id, 'binder-tab--visible': workspace.visible.includes(id) }" :aria-current="workspace.active === id ? 'page' : undefined" @click="activate(id)"><v-icon :icon="toolInfo(id).icon" size="16" />{{ toolInfo(id).label }}<span v-if="workspace.visible.includes(id)" class="binder-tab__dot" /></button>
     </nav>
-    <div v-if="workspace.visible.length > 1 && !workspace.maximized" class="workspace-resize"><label for="pane-width">Divisão das colunas</label><input id="pane-width" v-model.number="workspace.ratio" type="range" min="30" max="70" aria-label="Largura da coluna esquerda" /><span>{{ workspace.ratio }} / {{ 100 - workspace.ratio }}</span></div>
-    <div class="binder-panels" :class="[`binder-panels--${workspace.visible.length}`, { 'binder-panels--maximized': workspace.maximized }]" :style="{ '--pane-ratio': `${workspace.ratio}%` }">
+    <div v-if="!workspace.deskMode && workspace.visible.length > 1 && !effectiveMaximized && !workspace.focusMode" class="workspace-resize"><label for="pane-width">Divisão das colunas</label><input id="pane-width" v-model.number="workspace.ratio" type="range" min="30" max="70" aria-label="Largura da coluna esquerda" /><span>{{ workspace.ratio }}%</span></div>
+    <div class="binder-panels" :class="[`binder-panels--${workspace.focusMode ? 1 : workspace.visible.length}`, { 'binder-panels--maximized': effectiveMaximized }]" :style="{ '--pane-ratio': `${workspace.ratio}%` }">
       <!-- One stable instance per tool. Hiding, maximizing and changing the layout never remount it. -->
-      <article v-for="id in mountedTools" :key="id" class="binder-panel" :class="{ 'binder-panel--active': workspace.active === id, 'binder-panel--hidden': !workspace.visible.includes(id) || (workspace.maximized && workspace.maximized !== id) }" :aria-hidden="!workspace.visible.includes(id) || !!(workspace.maximized && workspace.maximized !== id)" :style="panelPosition(id)" :aria-label="toolInfo(id).label" @focusin="workspace.active = id" @pointerdown="workspace.active = id">
+      <article v-for="id in mountedTools" :key="id" class="binder-panel" :class="{ 'binder-panel--active': workspace.active === id, 'binder-panel--hidden': !workspace.visible.includes(id) || (effectiveMaximized && effectiveMaximized !== id) }" :aria-hidden="!workspace.visible.includes(id) || !!(effectiveMaximized && effectiveMaximized !== id)" :style="panelPosition(id)" :aria-label="toolInfo(id).label" @focusin="workspace.active = id" @pointerdown="workspace.active = id">
         <div class="binder-panel__bar"><span><v-icon :icon="toolInfo(id).icon" size="16" />{{ toolInfo(id).label }}</span><div><v-btn v-if="workspace.visible.length > 1" size="x-small" variant="text" :icon="workspace.maximized === id ? 'mdi-arrow-collapse' : 'mdi-arrow-expand'" :aria-label="workspace.maximized === id ? 'Restaurar espaços' : `Ampliar ${toolInfo(id).label}`" @click="workspace.maximized = workspace.maximized === id ? '' : id" /><v-btn v-if="workspace.visible.length > 1" size="x-small" variant="text" icon="mdi-minus" :aria-label="`Ocultar ${toolInfo(id).label}`" @click="workspace.hide(id)" /></div></div>
         <div @wheel="scrollWorkspace($event, $event.currentTarget)" class="binder-panel__content" :tabindex="workspace.visible.length > 1 ? 0 : undefined" role="region" :aria-label="`Conteúdo de ${toolInfo(id).label}`">
           <component :is="components[id]" :key="id" />
@@ -25,13 +34,14 @@
   </div>
 </template>
 <script setup>
-import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 import { useSyncStore } from '../stores/useSyncStore';
 import { scrollWorkspace } from '../utils/workspaceScroll';
 import { WORKSPACE_TOOLS } from '../utils/workspace';
 const route = useRoute(), router = useRouter(), workspace = useWorkspaceStore(), sync = useSyncStore();
+if (workspace.visible.length > 2 || (workspace.deskMode && !workspace.deskSplit && workspace.visible.length > 1)) workspace.restore(workspace.snapshot());
 const components = {
   dashboard: defineAsyncComponent(() => import('../sections/DashboardSection.vue')),
   records: defineAsyncComponent(() => import('../sections/RecordsSection.vue')),
@@ -51,13 +61,22 @@ watch(() => [...workspace.visible], ids => { loadedTools.value = [...new Set([..
 const descriptions = { dashboard: 'Seu dia, suas prioridades e o próximo passo.', records: 'Um lugar para escrever, conectar ideias e aprender.', timetable: 'Uma semana organizada abre espaço para aprender.', assistant: 'Pergunte, explore e estude no seu próprio ritmo.', 'focus-music': 'Prepare um ambiente confortável para se concentrar.', communities: 'Reúna seus grupos e registros de estudo.', agenda: 'Seus compromissos e entregas em um só lugar.', pomodoro: 'Uma tarefa de cada vez. Uma pausa quando precisar.', subjects: 'Organize as disciplinas da sua jornada.', profile: 'Um espaço com a sua identidade.' };
 const toolDescription = computed(() => descriptions[workspace.active] || 'Seu espaço pessoal de aprendizado.');
 const availableTools = computed(() => WORKSPACE_TOOLS.filter(t => !workspace.visible.includes(t.id)));
+const deskTools = computed(() => [...new Set(['records', 'assistant', 'pomodoro', 'focus-music', 'communities', ...workspace.opened])]);
+const effectiveMaximized = computed(() => workspace.focusMode ? workspace.active : workspace.maximized);
+const leaveFocus = event => { if (event.key === 'Escape' && !event.defaultPrevented) workspace.focusMode = false; };
+onMounted(() => window.addEventListener('keydown', leaveFocus));
+onUnmounted(() => window.removeEventListener('keydown', leaveFocus));
 function activate(id) { workspace.open(id); if (route.name !== id) router.push({ name: id }); }
+function exitDesk() { workspace.exitStudyDesk(); router.replace({ name: workspace.active }); }
 function panelPosition(id) {
-  if (workspace.maximized || workspace.visible.length === 1) return { gridArea: '1 / 1 / -1 / -1' };
+  if (effectiveMaximized.value || workspace.visible.length === 1) return { gridArea: '1 / 1 / -1 / -1' };
   const index = workspace.visible.indexOf(id);
   return { gridRow: workspace.visible.length === 3 && index === 0 ? '1 / 3' : String(Math.floor(index / 2) + 1), gridColumn: String(workspace.visible.length === 3 && index === 2 ? 2 : index % 2 + 1) };
 }
-watch(() => [route.name, route.query.edit, route.query.new], () => workspace.open(route.name), { immediate: true });
+watch(() => [route.name, route.query.edit, route.query.new], (_next, previous) => {
+  if (!previous && workspace.deskMode && !route.query.edit && !route.query.new) return;
+  workspace.open(route.name);
+}, { immediate: true });
 watch(() => workspace.snapshot(), () => sync.persistState(), { deep: true });
 </script>
 <style scoped>

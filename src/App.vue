@@ -1,6 +1,7 @@
 <template>
-  <v-app :theme="userStore.settings.theme" :class="['app-root', `theme-${userStore.settings.theme}`]" style="background: transparent !important;">
-    <canvas id="bg-canvas-3d" class="three-bg" aria-hidden="true"></canvas>
+  <v-app :theme="userStore.settings.theme" :class="['app-root', `theme-${userStore.settings.theme}`, { 'app-root--focused': workspace.focusMode && authUser && !route.meta.public, 'app-root--desk': workspace.deskMode && authUser && !route.meta.public && route.name !== 'login' }]" style="background: var(--app-bg) !important;">
+    <canvas v-show="authUser && route.name === 'focus-music' && !route.meta.public" id="bg-canvas-3d" class="three-bg" aria-hidden="true"></canvas>
+    <PwaStatus />
 
     <v-main style="position: relative; z-index: 10;">
       <v-container fluid class="py-6" :class="{ 'auth-container': (!authUser || route.name === 'login') && !authLoading }">
@@ -9,7 +10,9 @@
           <p class="text-medium-emphasis">Carregando Future Academy...</p>
         </div>
 
-        <AuthPortal v-else-if="!authUser || route.name === 'login'" :signed-in="!!authUser" :busy="authStore.authBusy" @google="loginWithGoogle" @facebook="loginWithFacebook" @submit="loginWithEmail" />
+        <router-view v-else-if="route.meta.public" />
+
+        <AuthPortal v-else-if="!authUser || route.name === 'login'" :signed-in="!!authUser" :busy="authStore.authBusy" :feedback="authStore.authFeedback" :feedback-type="authStore.authFeedbackType" :can-resend-confirmation="authStore.authCanResendConfirmation" :confirmation-email="authStore.authConfirmationEmail" :recovery-requested="authStore.authRecoveryRequested" @google="loginWithGoogle" @facebook="loginWithFacebook" @submit="loginWithEmail" @reset-password="authStore.resetPassword" @resend-confirmation="authStore.resendConfirmation" @clear-feedback="authStore.clearAuthFeedback" />
 
         <template v-else>
           <header class="app-header mb-6">
@@ -22,8 +25,6 @@
                 <p class="app-header__subtitle">Seu espaço de aprendizado</p>
               </div>
             </div>
-
-            <AcademySidebar header />
 
             <div class="app-header__right">
 
@@ -73,66 +74,38 @@
             </div>
           </header>
 
-          <div class="academy-shell">
+          <div class="academy-shell" :class="{ 'academy-shell--compact': workspace.compactSidebar }">
+            <AcademySidebar />
             <div class="academy-main" ref="sectionContent">
+              <SyncStatus />
               <div v-if="authStore.dataLoading" class="glass-card p-8 text-center"><v-progress-circular indeterminate color="primary" /><p class="mt-3">Abrindo seu fichário...</p></div>
               <StudyWorkspace v-else />
+              <section v-show="!workspace.focusMode && (!workspace.deskMode || workspace.active === 'focus-music')" class="focus-player-region" aria-label="Música de foco">
+                <v-card v-show="focusPlayer.visible" rounded="lg" elevation="0" class="spotify-dock" :class="{ 'spotify-dock--collapsed': focusPlayer.collapsed }">
+                  <div class="spotify-dock__header">
+                    <div class="spotify-dock__title">
+                      <v-icon icon="mdi-spotify" size="24" color="primary" />
+                      <div class="spotify-dock__copy">
+                        <span>Música de foco</span>
+                        <strong>{{ activeFocusPlaylist?.name || 'Spotify Player' }}</strong>
+                      </div>
+                    </div>
+                    <div class="spotify-dock__actions">
+                      <v-btn size="small" variant="text" color="primary" :aria-label="focusPlayer.collapsed ? 'Expandir player' : 'Recolher player'" :icon="focusPlayer.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'" @click="toggleFocusPlayerCollapse" />
+                      <v-btn size="small" variant="text" color="primary" icon="mdi-close" aria-label="Ocultar player" @click="closeFocusPlayer" />
+                    </div>
+                  </div>
+                  <div v-show="!focusPlayer.collapsed" class="spotify-dock__body">
+                    <iframe :src="currentEmbedUrl" width="100%" height="152" title="Player do Spotify" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />
+                  </div>
+                </v-card>
+                <v-btn v-if="!focusPlayer.visible" class="spotify-dock-reopen" color="primary" variant="tonal" prepend-icon="mdi-spotify" @click="openFocusPlayer">Reabrir música de foco</v-btn>
+              </section>
             </div>
           </div>
         </template>
       </v-container>
     </v-main>
-
-    <v-card
-      v-if="authUser && route.name !== 'login'"
-      rounded="xl"
-      elevation="10"
-      class="spotify-dock"
-      :class="{
-        'spotify-dock--collapsed': focusPlayer.collapsed,
-        'spotify-dock--hidden': !focusPlayer.visible
-      }"
-    >
-      <div class="spotify-dock__header">
-        <div class="spotify-dock__title">
-          <v-icon icon="mdi-spotify" size="18" />
-          <span class="text-caption font-weight-bold text-truncate">
-            {{ activeFocusPlaylist?.name || 'Spotify Player' }}
-          </span>
-        </div>
-        <div class="d-flex" style="gap: 6px">
-          <v-btn
-            size="x-small"
-            variant="text"
-            color="secondary"
-            :icon="focusPlayer.collapsed ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            @click="toggleFocusPlayerCollapse"
-          />
-          <v-btn size="x-small" variant="text" color="secondary" icon="mdi-close" @click="closeFocusPlayer" />
-        </div>
-      </div>
-      <div class="spotify-dock__body" v-show="!focusPlayer.collapsed">
-        <iframe
-          :src="currentEmbedUrl"
-          width="100%"
-          height="152"
-          title="Player do Spotify"
-          frameborder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-        />
-      </div>
-    </v-card>
-
-    <v-btn
-      v-if="authUser && route.name !== 'login' && !focusPlayer.visible"
-      class="spotify-dock-reopen"
-      color="primary"
-      prepend-icon="mdi-spotify"
-      @click="openFocusPlayer"
-    >
-      Reabrir player
-    </v-btn>
 
     <v-snackbar v-model="toast.visible" location="bottom right" color="primary">
       {{ toast.message }}
@@ -164,6 +137,8 @@
 </template>
 
 <script setup>
+import PwaStatus from './components/PwaStatus.vue';
+import SyncStatus from './components/SyncStatus.vue';
 import { 
   nextTick, ref, computed, watch, onMounted, onBeforeUnmount 
 } from 'vue';
@@ -297,6 +272,9 @@ const activeFocusPlaylist = computed(() => {
   if (!focusPlaylists.value.length) return null;
   return focusPlaylists.value[activePlaylistIndex.value] || focusPlaylists.value[0];
 });
+
+// Enter the desk with compact music controls; the iframe stays mounted and playing.
+watch(() => workspace.deskMode, active => { if (active) appStore.focusPlayer.collapsed = true; });
 
 
 // -- Lifecycle --
@@ -515,77 +493,83 @@ onBeforeUnmount(() => {
   background-color: rgba(99, 102, 241, 0.18);
 }
 
+.focus-player-region {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface-border);
+  min-width: 0;
+}
+
 .spotify-dock {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  width: min(370px, calc(100vw - 36px));
-  z-index: 20;
+  width: 100%;
   overflow: hidden;
-  border: 1px solid rgb(var(--gold-500) / 0.25);
+  border: 1px solid var(--surface-border);
   background: var(--surface);
-  transition: transform 0.25s ease, opacity 0.25s ease, background 0.3s ease, border-color 0.3s ease;
-}
-
-.spotify-dock--collapsed {
-  width: min(320px, calc(100vw - 36px));
-}
-
-.spotify-dock--hidden {
-  transform: translateY(120%);
-  opacity: 0;
-  pointer-events: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .spotify-dock__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 16px;
+  padding: 16px 18px;
   background: var(--surface);
-  transition: background 0.3s ease;
 }
 
 .spotify-dock__title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   min-width: 0;
 }
 
+.spotify-dock__copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.spotify-dock__copy > span {
+  font-size: 12px;
+  color: var(--app-muted);
+}
+
+.spotify-dock__copy strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--app-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-dock__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .spotify-dock__body {
-  border-top: 1px solid rgb(var(--gold-500) / 0.15);
-  transition: border-color 0.3s ease;
+  padding: 0 16px 16px;
+  background: var(--surface);
 }
 
 .spotify-dock__body iframe {
   display: block;
-  border-radius:12px;
-}
-.spotify-dock__body { padding:8px; background:var(--surface); }
-:global(html[data-theme='light'] .spotify-dock__body iframe) {
-  filter:invert(1) hue-rotate(180deg) sepia(.28) saturate(.7);
+  border-radius: 10px;
 }
 
 .spotify-dock-reopen {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 20;
+  max-width: 100%;
 }
 
 @media (max-width: 720px) {
-  .spotify-dock {
-    right: 10px;
-    bottom: 10px;
-    width: calc(100vw - 20px);
-  }
-
-  .spotify-dock-reopen {
-    right: 10px;
-    bottom: 10px;
-  }
+  .focus-player-region { margin-top: 22px; padding-top: 20px; }
+  .spotify-dock__header { padding: 14px 12px; gap: 10px; }
+  .spotify-dock__title { gap: 9px; }
+  .spotify-dock__copy strong { font-size: 13px; }
+  .spotify-dock__body { padding: 0 10px 10px; }
 }
 
 /* ── Logout — Liquid Glass Modal ────────── */

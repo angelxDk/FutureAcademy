@@ -206,7 +206,13 @@ export const RECORD_FORM_DEFAULTS = {
     contentHtml: '<p></p>'
 };
 
-export const FIREBASE_ERROR_MESSAGES = {
+export const AUTH_ERROR_MESSAGES = {
+    'invalid_credentials': 'E-mail ou senha incorretos.',
+    'email_not_confirmed': 'Confirme seu e-mail antes de entrar.',
+    'user_already_exists': 'Este e-mail já está em uso.',
+    'weak_password': 'Escolha uma senha mais forte, com pelo menos 10 caracteres.',
+    'over_email_send_rate_limit': 'Aguarde antes de solicitar outro e-mail.',
+    'over_request_rate_limit': 'Muitas tentativas. Tente novamente mais tarde.',
     'auth/invalid-credential': 'E-mail ou senha incorretos.',
     'auth/user-not-found': 'Nenhuma conta encontrada com este e-mail.',
     'auth/wrong-password': 'Senha incorreta.',

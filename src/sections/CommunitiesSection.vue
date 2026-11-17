@@ -1,7 +1,8 @@
 <template>
   <section class="grid gap-6">
+    <SharedCommunities />
     <div class="glass-card p-6">
-      <h2 class="text-xl font-bold text-primary mb-1">Comunidades de estudo</h2>
+      <h2 class="text-xl font-bold text-primary mb-1">Registros pessoais de grupos</h2>
       <p class="text-sm text-medium-emphasis mb-5">Organize seus grupos e registros de estudo. Use /ia para preparar uma pergunta no tutor gratuito ao lado.</p>
 
       <v-form @submit.prevent="handleAddCommunity">
@@ -101,7 +102,7 @@
               />
               <div class="d-flex flex-wrap align-center ga-3">
                 <v-btn type="submit" color="primary" variant="flat" height="44" class="font-semibold" :loading="chatOps.communityChat.busy" :disabled="chatOps.communityChat.busy">Enviar</v-btn>
-                <span class="text-caption text-medium-emphasis">Sem comando: envia para OpenAI se o backend estiver configurado.</span>
+                <span class="text-caption text-medium-emphasis">Sem comando: salva uma mensagem no seu registro pessoal.</span>
               </div>
             </v-form>
           </template>
@@ -118,6 +119,7 @@
 </template>
 
 <script setup>
+import SharedCommunities from '../components/SharedCommunities.vue';
 import { onMounted, ref } from 'vue';
 import { useCommunitiesStore } from '../stores/useCommunitiesStore';
 import { useCommunityChat } from '../composables/useCommunityChat';

@@ -1,0 +1,14 @@
+.env*
+env
+*.pem
+*.key
+serviceAccount*.json
+*.log
+node_modules
+dist
+.git
+.claude
+test-results
+playwright-report
+supabase/.temp
+supabase/.branches

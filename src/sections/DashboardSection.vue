@@ -1,9 +1,9 @@
 <template>
-  <section class="grid gap-6">
+  <section class="grid gap-6 dashboard-section">
     <div class="workspace-hero">
       <div>
         <p class="eyebrow">SEU ESPAÇO DE APRENDIZADO</p>
-        <h1>Um passo de cada vez,<br><span>{{ firstName }}.</span></h1>
+        <h2 class="dashboard-greeting">Olá, <span>{{ firstName }}.</span></h2>
         <p class="text-medium-emphasis mt-3">{{ dateLabel }} · Organize o dia. Dê espaço às suas ideias.</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -13,9 +13,10 @@
     </div>
     <v-progress-linear v-if="auth.dataLoading" indeterminate color="primary" aria-label="Carregando dados" />
     <template v-else>
-      <div v-if="!subjects.subjects.length" class="glass-card p-6 onboarding-card">
-        <div><p class="eyebrow">VAMOS COMEÇAR</p><h2 class="text-xl">Sua rotina começa com uma disciplina</h2><p class="text-medium-emphasis mt-2">Cadastre suas matérias, monte a grade e escreva seu primeiro trabalho aqui.</p></div>
-        <v-btn to="/subjects" color="primary" variant="tonal" prepend-icon="mdi-book-plus-outline">Adicionar disciplina</v-btn>
+      <div v-if="!subjects.subjects.length || !timetable.timetable.length || !records.records.length" class="glass-card p-6">
+        <p class="eyebrow">PRIMEIROS PASSOS</p><h2 class="text-xl mb-3">Monte seu fichário em três passos</h2>
+        <v-progress-linear :model-value="[subjects.subjects.length, timetable.timetable.length, records.records.length].filter(Boolean).length / 3 * 100" color="primary" height="6" class="mb-4" aria-label="Progresso da configuração inicial" />
+        <div class="d-flex flex-wrap ga-3"><v-btn to="/subjects" :variant="subjects.subjects.length ? 'text' : 'tonal'" :prepend-icon="subjects.subjects.length ? 'mdi-check' : 'mdi-book-plus-outline'">1. Cadastre uma matéria</v-btn><v-btn to="/timetable" :variant="timetable.timetable.length ? 'text' : 'tonal'" :prepend-icon="timetable.timetable.length ? 'mdi-check' : 'mdi-calendar-import'">2. Importe ou monte a grade</v-btn><v-btn to="/records?new=1" :variant="records.records.length ? 'text' : 'tonal'" :prepend-icon="records.records.length ? 'mdi-check' : 'mdi-notebook-outline'">3. Crie sua primeira anotação</v-btn></div>
       </div>
       <div class="overview-grid">
         <div v-for="stat in stats" :key="stat.label" class="glass-card overview-stat">

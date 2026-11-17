@@ -194,6 +194,7 @@
 </template>
 
 <script setup>
+import { apiFetch } from '../services/api';
 import { computed, ref } from 'vue';
 import { useTimetableStore } from '../stores/useTimetableStore';
 import { useSubjectsStore } from '../stores/useSubjectsStore';
@@ -282,10 +283,27 @@ const timetableImport = ref({
   newSubjects: []
 });
 
-// ── Extrai tabela estruturada de DOCX via HTML (mammoth.convertToHtml) ──
 const extractTableFromDocx = async (file) => {
-  if (!mammoth) { const module = await import('mammoth/mammoth.browser'); mammoth = module.default || module; }
   const arrayBuffer = await file.arrayBuffer();
+// ── Extrai tabela estruturada de DOCX via HTML (mammoth.convertToHtml) ──
+if (!mammoth) {
+  const mod = await import('mammoth/mammoth.browser');
+
+  mammoth = [
+    mod.default,
+    mod.default?.default,
+    mod,
+    window.mammoth
+  ].find(value =>
+    typeof value?.convertToHtml === 'function'
+  );
+
+  if (!mammoth) {
+    throw new Error(
+      'Mammoth não carregado corretamente.'
+    );
+  }
+}
 
   // Converte para HTML para preservar estrutura de tabela
   const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
@@ -312,7 +330,6 @@ const extractTableFromDocx = async (file) => {
   const textResult = await mammoth.extractRawText({ arrayBuffer });
   return { type: 'text', content: textResult.value || '' };
 };
-
 // ── Extrai texto de PDF com posicionamento por coluna ──
 const extractStructuredFromPdf = async (file) => {
   if (!pdfjs) {
@@ -456,7 +473,7 @@ const onTimetableFileImport = async (event) => {
 
     timetableImport.value.status = 'Processando grade horária...';
 
-    const aiReq = await fetch('/api/parse-timetable', {
+    const aiReq = await apiFetch('/api/parse-timetable', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

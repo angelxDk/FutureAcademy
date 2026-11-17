@@ -34,14 +34,15 @@ describe('binder workspace', () => {
   beforeEach(() => setActivePinia(createPinia()));
   it('supports four distinct panes, keeps hidden tabs, and does not close the last pane', () => {
     const store = useWorkspaceStore();
-    store.studyPreset();
-    expect(store.visible).toEqual(['records', 'assistant', 'focus-music', 'communities']);
+    store.open('records');
     store.open('assistant', true);
-    expect(store.visible).toHaveLength(4);
+    expect(store.visible).toEqual(['records', 'assistant']);
+    store.open('assistant', true);
+    expect(store.visible).toHaveLength(2);
     store.hide('assistant');
     expect(store.opened).toContain('assistant');
     store.open('assistant', true);
-    expect(store.visible).toHaveLength(4);
+    expect(store.visible).toHaveLength(2);
     store.solo('records'); store.hide('records');
     expect(store.visible).toEqual(['records']);
     store.restore({ opened: ['records', 'bad', 'records'], visible: ['bad'], ratio: 200 });

@@ -1,7 +1,7 @@
+import { captureServerError } from './monitoring.js';
 export function cleanErrorMessage(err, fallback = 'Falha ao processar a solicitação.') {
-    if (!err) return fallback;
-    if (typeof err === 'string') return err;
-    if (err instanceof Error && err.message) return err.message;
+    void captureServerError(err);
+    console.error(JSON.stringify({ event: 'integration_failed', code: err?.code || err?.name || 'internal' }));
     return fallback;
 }
 

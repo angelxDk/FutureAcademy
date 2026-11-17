@@ -1,3 +1,4 @@
+import { apiFetch } from '../services/api';
 import { reactive, computed, nextTick } from 'vue';
 import { useAssistantStore } from '../stores/useAssistantStore';
 import { useWorkspaceStore } from '../stores/useWorkspaceStore';
@@ -148,8 +149,8 @@ export function useCommunityChat() {
             '/spotify <busca> - lista faixas no Spotify.',
             '/cambio <valor> <moeda_origem> <moeda_destino> - ex: /cambio 100 USD BRL.',
             '/ia <pergunta> - abre o tutor gratuito ao lado.',
-            'Sem comando: mensagem vai direto para a IA via backend.',
-            'Se der erro de configuração, confira as variáveis no arquivo .env do servidor.'
+            'Sem comando: salva uma mensagem no seu registro pessoal.',
+            'Se uma integração estiver indisponível, tente novamente mais tarde.'
         ].join('\n');
     };
 
@@ -208,7 +209,7 @@ export function useCommunityChat() {
         const query = String(searchText || '').trim();
         if (!query) return 'Informe um termo de busca para o Spotify.';
         try {
-            const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}&limit=5`);
+            const response = await apiFetch(`/api/spotify/search?q=${encodeURIComponent(query)}&limit=5`);
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
                 return data?.error || `Falha ao consultar Spotify (${response.status}).`;
@@ -236,7 +237,7 @@ export function useCommunityChat() {
         }
         try {
             const endpoint = `/api/exchange?amount=${encodeURIComponent(numericAmount)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-            const response = await fetch(endpoint);
+            const response = await apiFetch(endpoint);
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
                 return data?.error || `Falha ao consultar câmbio (${response.status}).`;

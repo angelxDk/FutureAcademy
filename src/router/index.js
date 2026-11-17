@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AuthPortal from '../components/AuthPortal.vue';
 
 const routes = [
+    { path: '/redefinir-senha', name: 'reset-password', component: () => import('../sections/PasswordResetSection.vue'), meta: { public: true } },
+    ...[['/conhecer', 'overview'], ['/privacidade', 'privacy'], ['/termos', 'terms']].map(([path, name]) => ({ path, name, component: () => import('../sections/PublicInfoSection.vue'), meta: { public: true } })),
     { path: '/entrar', name: 'login', component: AuthPortal, meta: { requiresAuth: false } },
     {
         path: '/',

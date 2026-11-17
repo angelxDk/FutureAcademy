@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid && !exists(/databases/$(database)/documents/accountDeletions/$(uid)); }
+    match /users/{uid}/data/state {
+      allow read, delete: if owner(uid);
+      allow create, update: if owner(uid)
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'revision', 'savedAt'])
+        && request.resource.data.schemaVersion == 2
+        && request.resource.data.revision is int
+        && request.resource.data.revision == (resource == null ? 1 : resource.data.get('revision', 0) + 1)
+        && request.resource.data.savedAt is number;
+    }
+    match /users/{uid}/entries/{entry} {
+      allow read, delete: if owner(uid);
+      allow create, update: if owner(uid)
+        && request.resource.data.keys().hasOnly(['kind', 'key', 'value'])
+        && request.resource.data.kind in ['setting', 'subjects', 'timetable', 'events', 'records', 'recordDrafts', 'studySessions', 'communities'];
+    }
+    match /communities/{group} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.memberIds;
+      allow write: if false;
+      match /messages/{message} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/communities/$(group)).data.memberIds;
+        allow write: if false;
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

@@ -1,3 +1,4 @@
+import { configureMonitoring } from './services/monitoring';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
@@ -7,6 +8,7 @@ import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
 import { router } from './router';
 import './main.css';
+import './workspace.css';
 
 const vuetify = createVuetify({
   theme: {
@@ -15,35 +17,35 @@ const vuetify = createVuetify({
       light: {
         dark: false,
         colors: {
-          background: '#ECE2C5',
-          surface: '#F5ECD3',
-          'on-background': '#3F392C',
-          'on-surface': '#3F392C',
+          background: '#F2F4F7',
+          surface: '#FFFFFF',
+          'on-background': '#202A38',
+          'on-surface': '#202A38',
           primary: '#895E31',
           secondary: '#626A49',
           accent: '#8C5E43',
-          info: '#7B92B2',
-          success: '#9F7E5F',
-          warning: '#C8924F',
+          info: '#416A9F',
+          success: '#24745E',
+          warning: '#9A681E',
           error: '#A84E3C'
         }
       },
       dark: {
         dark: true,
         colors: {
-          background: '#0B1120',
-          surface: '#192332',
-          'on-background': '#EEE2BF',
-          'on-surface': '#EEE2BF',
+          background: '#101722',
+          surface: '#192331',
+          'on-background': '#EDF2FA',
+          'on-surface': '#EDF2FA',
           'on-primary': '#282216',
           'on-secondary': '#282216',
           primary: '#D5B167',
           secondary: '#E6C884',
           accent: '#B48F4A',
           info: '#60A5FA',
-          success: '#5E72E4',
+          success: '#72B99D',
           warning: '#F59E0B',
-          error: '#EF4444'
+          error: '#E98989'
         }
       }
     }
@@ -59,4 +61,6 @@ const vuetify = createVuetify({
 
 const pinia = createPinia();
 
-createApp(App).use(vuetify).use(pinia).use(router).mount('#app');
+const app = createApp(App).use(vuetify).use(pinia).use(router);
+configureMonitoring(app);
+app.mount('#app');

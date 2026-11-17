@@ -1,3 +1,5 @@
+> **Base atual (16/11/2026):** Supabase Auth + PostgreSQL, com TypeScript incremental e PWA na entrega local da [Foundation](docs/FOUNDATION.md). Esta fase e sua nova migração SQL ainda precisam ser publicadas. O histórico da publicação anterior está no [guia de migração](docs/MIGRACAO-SUPABASE.md); as próximas fases estão no [roteiro Academic OS](docs/ACADEMIC-OS.md).
+
 # Future Academy
 
 O Future Academy é um hub acadêmico feito para organizar rotina de estudo em um único lugar: matérias, grade semanal, agenda, trabalhos, pomodoro, comunidade e apoio com IA.
@@ -8,8 +10,8 @@ Repositório: `https://github.com/angelxDk/FutureAcademy`
 
 - Frontend em Vue 3 (SFC), Vite 8, Vuetify e CSS responsivo.
 - Backend em Node + Express para proteger chaves e intermediar integrações externas.
-- Autenticação com Firebase (Google, Facebook e e-mail/senha).
-- Persistência dos dados do usuário no Firestore.
+- Autenticação com Supabase Auth (e-mail/senha; Google/Facebook dependem da configuração OAuth).
+- Persistência modular em PostgreSQL/Supabase, com RPCs autenticadas e revisão atômica.
 
 ## Funcionalidades principais
 
@@ -24,15 +26,17 @@ Repositório: `https://github.com/angelxDk/FutureAcademy`
 - Comunidades de estudo com chat e comandos rápidos (`/tempo`, `/spotify`, `/cambio`, `/ia`).
 - Tutor com IA real local via WebLLM ou Ollama e pesquisa de referências na Crossref.
 - Área de foco com player Spotify persistente e presets visuais 3D.
+- PWA instalável com cache do shell público, aviso de conexão e atualização controlada.
 
 ## Stack técnica
 
 - `vue` + `vite`
 - `vuetify`
-- `tailwindcss`
 - `gsap`
 - `three`
-- `firebase` (Auth + Firestore)
+- `@supabase/supabase-js` (Auth + PostgreSQL)
+- TypeScript no núcleo de autenticação, API e persistência (migração incremental)
+- `vite-plugin-pwa` (instalação, cache público e atualização controlada)
 - `express`
 - `docx` (exportação de registros)
 
@@ -40,8 +44,7 @@ Repositório: `https://github.com/angelxDk/FutureAcademy`
 
 - Node.js `22.13+` (recomendado `24+`)
 - npm
-- Python 3 (usado no parser de importação de horários)
-- Projeto Firebase configurado (Auth + Firestore)
+- Projeto Supabase configurado (Auth + migrações PostgreSQL)
 - Chaves de API para integrações opcionais (OpenAI, Spotify e ExchangeRate)
 
 ## Como rodar localmente
@@ -79,19 +82,18 @@ Arquivo base: `.env.example`.
 
 ### Frontend (Vite)
 
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY` (chave pública anon/publishable)
+
+No backend, configure `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. A chave secreta nunca deve usar prefixo `VITE_`. Aplique todas as migrações em `supabase/migrations/` em ordem; veja [o guia da Foundation](docs/FOUNDATION.md).
 
 ## Scripts disponíveis
 
 - `npm run dev` inicia frontend e backend em paralelo
 - `npm run dev:client` inicia apenas o frontend (Vite)
 - `npm run dev:server` inicia apenas o backend (Node com watch)
-- `npm run build` build de produção do frontend
+- `npm run typecheck` verifica o núcleo TypeScript e os componentes Vue tipados
+- `npm run build` verifica tipos e gera a build de produção com PWA
 - `npm run preview` preview local da build do frontend
 - `npm run start` sobe backend em produção e serve `dist/` (requer build gerada)
 
@@ -109,8 +111,9 @@ Arquivo base: `.env.example`.
 .
 ├── src/
 │   ├── App.vue
-│   ├── appOptions.js
-│   ├── firebase.js
+│   ├── auth.ts
+│   ├── services/
+│   ├── types/
 │   └── sections/
 ├── server/
 │   ├── index.js
@@ -175,10 +178,15 @@ grade oferece lista alternativa, impressão/PDF e exportação `.ics` com recorr
 semanal. Os horários do `.ics` seguem o calendário local de quem importa.
 
 **Abrir ao lado** adiciona uma ferramenta até o limite de quatro espaços.
-**Mesa de estudo** abre Caderno, IA, Sons e Comunidade em uma grade 2 × 2 e recolhe
-o menu lateral. Cada espaço tem rolagem independente, ampliar/restaurar e ocultar.
+**Mesa de estudo** ocupa a janela com uma ferramenta por vez. As abas preservam a edição;
+**Dividir tela** abre Caderno e apoio lado a lado quando necessário. Layouts antigos
+de quatro quadros são convertidos automaticamente, mantendo as ferramentas abertas. As abas alternam entre IA, Pomodoro, Sons e Comunidade sem fechar
+o caderno. O cabeçalho geral fica recolhido; **Ampliar caderno** usa toda a área de
+trabalho, e **Sair da mesa** recupera a distribuição anterior. Cada espaço tem
+rolagem independente, ampliar/restaurar e ocultar.
 Ocultar ou trocar a distribuição mantém a instância da ferramenta, a edição e o
-áudio. O controle de divisão ajusta a largura das colunas. No celular, os espaços
+áudio. O controle de divisão ajusta a largura das colunas. O player de música tem
+sua própria área e entra recolhido na mesa, sem cobrir a escrita. No celular, os espaços
 são empilhados. As abas guardam as ferramentas visitadas durante a sessão.
 
 O caderno usa as extensões abertas do Tiptap: títulos, listas, tarefas, marca-texto,
@@ -208,13 +216,14 @@ diferentes são preservados separadamente e aparecem acima do editor.
   Audio API. Mistura de volumes independente de Spotify, assinatura ou arquivos.
 
 Conversas e rascunhos usam a persistência existente por conta (cópia local e
-Firestore). Processamento local de IA não significa que a conversa não seja
-sincronizada com a conta. Os limites gratuitos do Firebase continuam aplicáveis.
-O snapshot atual usa um documento por usuário; acervos grandes precisarão de
-persistência por documento para ultrapassar o limite de tamanho do Firestore.
+PostgreSQL). Processamento local de IA não significa que a conversa não seja
+sincronizada com a conta. Os limites gratuitos do Supabase continuam aplicáveis.
+A persistência v2 separa notas e outros itens em documentos, com revisão para
+detectar gravações desatualizadas de outros dispositivos. A biblioteca ainda é carregada
+por inteiro; veja os limites operacionais em `docs/LANCAMENTO.md`.
 
-A seção Comunidade mantém grupos e registros pessoais. Chat entre contas em tempo
-real ainda não está implementado. Mensagens normais não disparam API paga;
+A seção Comunidade mantém registros pessoais e uma área de grupos compartilhados
+com mensagens entre contas em tempo real e convites para e-mails verificados. Mensagens normais não disparam API paga;
 `/ia <pergunta>` prepara uma pergunta no tutor gratuito ao lado. Integrações pagas
 legadas do backend permanecem opcionais e não são usadas pelo novo tutor.
 
@@ -231,7 +240,7 @@ Os arquivos pesados de IA e importação são carregados sob demanda.
 A tela pública `/entrar` combina uma ilustração própria de ágora futurista com
 mármore, azul noturno, detalhes dourados e tipografia Cormorant Garamond.
 A composição adapta-se ao celular, com o formulário abaixo da ilustração.
-Google, Facebook e e-mail usam o Firebase já configurado. A validação indica
+E-mail usa Supabase Auth; Google e Facebook ficam disponíveis quando configurados no provedor. A validação indica
 campos incompletos, permite mostrar a senha e preserva o formulário em caso de
 erro de autenticação. Quem já está conectado pode voltar ao fichário pelo link no
 cabeçalho. O canvas 3D fica desativado nesta página para não competir com a arte.
@@ -240,7 +249,7 @@ A seta no próprio cabeçalho da navegação lateral recolhe o menu para uma fai
 ícones; a seta inversa o expande. Os atalhos continuam acessíveis e a preferência
 fica salva junto à organização da mesa.
 
-Arte: `src/assets/agora-futura.png`, gerada com a ferramenta integrada ImageGen.
+Arte original: `src/assets/agora-futura.png` (a entrada usa a cópia otimizada `.webp`), gerada com a ferramenta integrada ImageGen.
 O prompt e a direção visual estão em `src/assets/agora-futura.prompt.md`.
 
 ## Rolagem e organização visual
@@ -258,3 +267,20 @@ cabeçalho compacto e editor de 16px. As superfícies são opacas e discretas; a
 
 ### Corretor ortográfico
 O botão Ortografia no caderno usa Hunspell em um Web Worker e o dicionário pt-BR VERO (`dictionary-pt`). Os textos não são enviados a APIs. A revisão é manual e não analisa gramática; sugestões substituem uma ocorrência de cada vez e podem ser desfeitas. Dicionário e licença estão em `public/dictionaries/pt-BR`. `scripts/patch-spelling-deps.mjs` adapta os wrappers WASM à API atualizada do nanoid e à importação ESM; é executado no postinstall.
+
+## Preparação de lançamento e freemium
+
+A implementação de produção, as configurações externas pendentes e o roteiro de
+validação estão em [docs/LANCAMENTO.md](docs/LANCAMENTO.md). O plano gratuito mantém
+as ferramentas de organização e IA local; o Pro acrescenta IA na nuvem com cota.
+Preço e recorrência são obtidos do Stripe configurado no servidor.
+
+As APIs exigem token Supabase, validado pelo backend. Configure as variáveis do
+Supabase e aplique as migrações PostgreSQL antes de usar a persistência. O acervo é separado em entradas por item,
+com revisão para detectar alterações concorrentes e exportação de recuperação.
+A descrição anterior de snapshot único e ausência de chat entre contas descreve a
+versão legada; os novos grupos compartilhados ficam separados dos registros pessoais.
+
+`npm run test:rules` valida isolamento e persistência PostgreSQL com PGlite; `npm run test:e2e:full`
+executa uma jornada autenticada em ambiente demo isolado. O teste full gera uma build
+de demonstração: execute `npm run build` com as variáveis corretas antes de publicar.

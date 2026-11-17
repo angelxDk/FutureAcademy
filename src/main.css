@@ -3,19 +3,26 @@
 
 :root {
   font-family: 'Manrope', sans-serif;
+  color-scheme: dark;
+  --app-bg: #101722;
+  --app-text: #edf2fa;
+  --app-muted: #b0bdcf;
+  --surface: #192331;
+  --surface-border: #344357;
 }
 
 /* ── Temas ── */
 html[data-theme='light'] {
-  --app-bg: #ece2c5;
-  --app-text: #3f392c;
-  --app-muted: #716650;
-  --surface: #f5ecd3;
-  --surface-border: #d8c9a5;
+  color-scheme: light;
+  --app-bg: #f2f4f7;
+  --app-text: #202a38;
+  --app-muted: #526175;
+  --surface: #ffffff;
+  --surface-border: #d9e0e9;
   --glass-shadow: 0 2px 8px #65512c06;
-  --dark-900: 236 226 197;
-  --dark-800: 245 236 211;
-  --dark-700: 222 207 170;
+  --dark-900: 245 246 248;
+  --dark-800: 255 255 255;
+  --dark-700: 226 230 235;
   --dark-600: 198 164 135;
   --gold-400: 128 87 43;
   --gold-500: 137 94 49;
@@ -26,11 +33,12 @@ html[data-theme='light'] {
 }
 
 html[data-theme='dark'] {
+  color-scheme: dark;
   --app-bg: #101722;
-  --app-text: #eee2bf;
-  --app-muted: #b9af95;
-  --surface: #192332;
-  --surface-border: #2b384a;
+  --app-text: #edf2fa;
+  --app-muted: #b0bdcf;
+  --surface: #192331;
+  --surface-border: #344357;
   --glass-shadow: 0 2px 8px #00000008;
   --dark-900: 11 17 32;
   --dark-800: 19 27 53;
@@ -447,8 +455,8 @@ html[data-theme='dark'] .logo-dark {
 @media (max-width:600px) { .overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .overview-stat { padding:16px; } .record-filters { grid-template-columns:1fr; } .onboarding-card { align-items:flex-start; flex-direction:column; } .academic-row { gap:10px; } .section-heading { flex-wrap:wrap; } .workspace-hero h1 { letter-spacing:-.8px; } }
 @media (prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
-html[data-theme='light'] { --notebook-paper:#f7eed5; --notebook-rule:#8b775826; --ring-color:#aa9771; }
-html[data-theme='dark'] { --notebook-paper:#192332; --notebook-rule:#9baecc17; --ring-color:#617085; }
+html[data-theme='light'] { --notebook-paper:#fff; --notebook-rule:#8b775826; --ring-color:#aa9771; }
+html[data-theme='dark'] { --notebook-paper:#192331; --notebook-rule:#9baecc17; --ring-color:#617085; }
 .binder-panel .glass-card { box-shadow:none; }
 .binder-panel .workspace-hero { padding-top:4px; }
 .study-markdown h1,.study-markdown h2,.study-markdown h3 { margin:18px 0 9px; line-height:1.4; }
@@ -506,6 +514,10 @@ html[data-theme='dark'] { --notebook-paper:#192332; --notebook-rule:#9baecc17; -
 @media(max-width:1100px) { .academy-shell { grid-template-columns:204px minmax(0,1fr); gap:20px; } .academy-shell--compact { grid-template-columns:62px minmax(0,1fr); } .app-root .v-container:not(.auth-container) { padding:18px; } }
 @media(max-width:760px) { .academy-shell,.academy-shell--compact { display:block; } .app-root .v-container:not(.auth-container) { padding:14px; } .app-root .app-header { padding:0 0 14px; } .record-writing-card { padding:16px; } }
 
-/* Navigation now lives in the header; the study area uses the full width. */
-.app-root .academy-shell { display:block; }
-@media(max-width:1100px) { .app-root .app-header > .academy-navigation--header { flex-basis:100%; margin:0; } }
+
+
+/* Keyboard navigation and motion preferences apply across the workspace. */
+:focus-visible { outline: 2px solid #d5b877; outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
