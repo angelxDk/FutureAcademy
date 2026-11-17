@@ -14,7 +14,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:rules
-      - run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npx supabase start

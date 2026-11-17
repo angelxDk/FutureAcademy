@@ -1,4 +1,4 @@
-> **Base atual (16/11/2026):** Supabase Auth + PostgreSQL, com TypeScript incremental e PWA na entrega local da [Foundation](docs/FOUNDATION.md). Esta fase e sua nova migração SQL ainda precisam ser publicadas. O histórico da publicação anterior está no [guia de migração](docs/MIGRACAO-SUPABASE.md); as próximas fases estão no [roteiro Academic OS](docs/ACADEMIC-OS.md).
+> **Base atual (17/11/2026):** Supabase Auth + PostgreSQL, com TypeScript incremental e PWA da [Foundation](docs/FOUNDATION.md), publicada na Vercel. A migração SQL da Foundation foi confirmada no histórico remoto. O histórico anterior está no [guia de migração](docs/MIGRACAO-SUPABASE.md); as próximas fases estão no [roteiro Academic OS](docs/ACADEMIC-OS.md).
 
 # Future Academy
 

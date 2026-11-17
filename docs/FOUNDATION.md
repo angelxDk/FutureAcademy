@@ -1,5 +1,16 @@
 # Foundation — entrega local em 16/11/2026
 
+## Publicação em 17/11/2026
+
+- Migrações `202611130001` e `202611160001` confirmadas no histórico remoto do projeto `unjaamgdenspepspxzle`; nenhuma alteração ou reset do banco remoto foi necessário nesta publicação.
+- Deployment `dpl_97EQAKZ2qcM32XuTjeVGWK3cBpsD` construído com variáveis Production, validado antes da promoção e promovido a `https://future-academy-six.vercel.app`.
+- Validação local: 11 testes Node/PostgreSQL, 81 Vitest e 18 Playwright passaram, incluindo jornadas autenticadas em Supabase local isolado, desktop e celular. Tipagem e build passaram. A build local foi gerada novamente após o ensaio isolado.
+- Auditoria npm completa sem vulnerabilidades reportadas. O patch local do picomatch tem testes de execução limitada e compatibilidade; detalhes em `vendor/picomatch/SECURITY-PATCH.md`. A auditoria isoladamente não comprova a correção do fork.
+- Verificação do deployment antes da promoção: health saudável, manifesto PWA correto e API recusando acesso sem autenticação com HTTP 401.
+- Permanecem os avisos de chunks grandes das bibliotecas existentes. Esta publicação não configura OAuth social nem ativa cobrança real.
+
+O restante deste documento registra a implementação e a validação original da entrega local.
+
 A Fase 01 prepara a aplicação existente para a evolução descrita no
 [roteiro Academic OS](ACADEMIC-OS.md). A base continua em Vue 3, Pinia, Express e
 Supabase Auth/PostgreSQL. Esta alteração não publica a aplicação nem modifica o
