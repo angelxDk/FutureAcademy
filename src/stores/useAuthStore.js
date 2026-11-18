@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import {
     auth,
     googleProvider,
-    facebookProvider,
     signInWithPopup,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -117,25 +116,6 @@ export const useAuthStore = defineStore('auth', {
             this.authBusy = true;
             try {
                 const result = await signInWithPopup(auth, googleProvider);
-                if (result.redirected) return;
-                this.authUser = normalizeUser(result.user);
-                appStore.showToast(`Bem-vindo(a), ${this.authUser.name}!`);
-            } catch (error) {
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    this._setAuthFeedback(this._getAuthErrorMessage(error));
-                }
-            } finally {
-                this.authBusy = false;
-            }
-        },
-
-        async loginWithFacebook() {
-            if (this.authBusy) return;
-            const appStore = useAppStore();
-            this.clearAuthFeedback();
-            this.authBusy = true;
-            try {
-                const result = await signInWithPopup(auth, facebookProvider);
                 if (result.redirected) return;
                 this.authUser = normalizeUser(result.user);
                 appStore.showToast(`Bem-vindo(a), ${this.authUser.name}!`);

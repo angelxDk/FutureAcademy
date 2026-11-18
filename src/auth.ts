@@ -1,4 +1,4 @@
-import type { Provider, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { supabase, requireSupabase } from './services/supabase';
 import { createCloudPersistence } from './services/cloudPersistence';
 const cloudPersistence = createCloudPersistence(() => supabase);
@@ -31,7 +31,7 @@ function setCurrentUser(user: User | null | undefined) {
   auth.currentUser = next;
   return next;
 }
-export const googleProvider = 'google', facebookProvider = 'facebook';
+export const googleProvider = 'google';
 export function normalizeUser(user: AcademicUser | null) {
   if (!user) return null;
   const avatar: unknown = user.user_metadata?.avatar_url;
@@ -68,8 +68,10 @@ export async function updateProfile(_user: unknown, profile: { displayName: stri
   const { data, error } = await requireSupabase().auth.updateUser({ data: { display_name: profile.displayName } });
   if (error) throw error; setCurrentUser(data.user);
 }
-export async function signInWithPopup(_auth: unknown, provider: Provider) {
-  const { error } = await requireSupabase().auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}/` } });
+export async function signInWithPopup(_auth: unknown, provider: 'google') {
+  const { error } = await requireSupabase().auth.signInWithOAuth({ provider, options: {
+    redirectTo: `${window.location.origin}/`
+  } });
   if (error) throw error;
   return { redirected: true };
 }

@@ -10,12 +10,12 @@ Repositório: `https://github.com/angelxDk/FutureAcademy`
 
 - Frontend em Vue 3 (SFC), Vite 8, Vuetify e CSS responsivo.
 - Backend em Node + Express para proteger chaves e intermediar integrações externas.
-- Autenticação com Supabase Auth (e-mail/senha; Google/Facebook dependem da configuração OAuth).
+- Autenticação com Supabase Auth (e-mail/senha; Google depende da configuração OAuth).
 - Persistência modular em PostgreSQL/Supabase, com RPCs autenticadas e revisão atômica.
 
 ## Funcionalidades principais
 
-- Login e cadastro com Google, Facebook ou e-mail/senha.
+- Login e cadastro com Google ou e-mail/senha.
 - Painel com visão rápida da rotina e registro de estudo.
 - Cadastro de matérias com dados de professor.
 - Grade semanal com edição e lembretes.
@@ -240,7 +240,7 @@ Os arquivos pesados de IA e importação são carregados sob demanda.
 A tela pública `/entrar` combina uma ilustração própria de ágora futurista com
 mármore, azul noturno, detalhes dourados e tipografia Cormorant Garamond.
 A composição adapta-se ao celular, com o formulário abaixo da ilustração.
-E-mail usa Supabase Auth; Google e Facebook ficam disponíveis quando configurados no provedor. A validação indica
+E-mail usa Supabase Auth; Google fica disponível quando configurado no provedor. A validação indica
 campos incompletos, permite mostrar a senha e preserva o formulário em caso de
 erro de autenticação. Quem já está conectado pode voltar ao fichário pelo link no
 cabeçalho. O canvas 3D fica desativado nesta página para não competir com a arte.

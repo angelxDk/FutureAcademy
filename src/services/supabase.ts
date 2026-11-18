@@ -9,11 +9,11 @@ export function requireSupabase() {
   return supabase;
 }
 export async function availableSocialProviders() {
-  if (!url || !key) return { google: false, facebook: false };
+  if (!url || !key) return { google: false };
   try {
     const response = await fetch(new URL('/auth/v1/settings', url), { headers: { apikey: key }, signal: AbortSignal.timeout(5000) });
-    if (!response.ok) return { google: false, facebook: false };
+    if (!response.ok) return { google: false };
     const settings = await response.json();
-    return { google: settings.external?.google === true, facebook: settings.external?.facebook === true };
-  } catch { return { google: false, facebook: false }; }
+    return { google: settings.external?.google === true };
+  } catch { return { google: false }; }
 }

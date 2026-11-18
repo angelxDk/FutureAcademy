@@ -12,7 +12,7 @@
 
         <router-view v-else-if="route.meta.public" />
 
-        <AuthPortal v-else-if="!authUser || route.name === 'login'" :signed-in="!!authUser" :busy="authStore.authBusy" :feedback="authStore.authFeedback" :feedback-type="authStore.authFeedbackType" :can-resend-confirmation="authStore.authCanResendConfirmation" :confirmation-email="authStore.authConfirmationEmail" :recovery-requested="authStore.authRecoveryRequested" @google="loginWithGoogle" @facebook="loginWithFacebook" @submit="loginWithEmail" @reset-password="authStore.resetPassword" @resend-confirmation="authStore.resendConfirmation" @clear-feedback="authStore.clearAuthFeedback" />
+        <AuthPortal v-else-if="!authUser || route.name === 'login'" :signed-in="!!authUser" :busy="authStore.authBusy" :feedback="authStore.authFeedback" :feedback-type="authStore.authFeedbackType" :can-resend-confirmation="authStore.authCanResendConfirmation" :confirmation-email="authStore.authConfirmationEmail" :recovery-requested="authStore.authRecoveryRequested" @google="loginWithGoogle" @submit="loginWithEmail" @reset-password="authStore.resetPassword" @resend-confirmation="authStore.resendConfirmation" @clear-feedback="authStore.clearAuthFeedback" />
 
         <template v-else>
           <header class="app-header mb-6">
@@ -232,7 +232,6 @@ const enableNotifications = async () => {
 
 // -- Auth Methods --
 const loginWithGoogle = async () => { await authStore.loginWithGoogle(); if (authStore.authUser) router.replace('/'); };
-const loginWithFacebook = async () => { await authStore.loginWithFacebook(); if (authStore.authUser) router.replace('/'); };
 const loginWithEmail = async ({ mode, name, email, password, confirm }) => {
   authStore.authEmail = email;
   authStore.authPassword = password;

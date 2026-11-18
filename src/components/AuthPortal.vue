@@ -21,8 +21,8 @@
               <button v-if="canResendConfirmation && email.trim().toLowerCase() === confirmationEmail.toLowerCase()" type="button" :disabled="busy" @click="emit('resend-confirmation', email)">Reenviar confirmação de e-mail</button>
               <router-link v-if="recoveryRequested" to="/redefinir-senha">Inserir código e criar nova senha</router-link>
             </div>
-            <div v-if="providers.google || providers.facebook" class="entrance-social"><v-btn v-if="providers.google" class="entrance-google" variant="outlined" block height="48" :disabled="busy" @click="$emit('google')"><v-icon icon="mdi-google" size="18" class="mr-3" />Continuar com Google</v-btn><v-btn v-if="providers.facebook" class="entrance-facebook" variant="outlined" block height="48" :disabled="busy" @click="$emit('facebook')"><v-icon icon="mdi-facebook" size="17" class="mr-2" />Continuar com Facebook</v-btn></div>
-            <div v-if="providers.google || providers.facebook" class="entrance-divider"><span />ou use seu e-mail<span /></div>
+            <div v-if="providers.google" class="entrance-social"><v-btn v-if="providers.google" class="entrance-google" variant="outlined" block height="48" :disabled="busy" @click="$emit('google')"><v-icon icon="mdi-google" size="18" class="mr-3" />Continuar com Google</v-btn></div>
+            <div v-if="providers.google" class="entrance-divider"><span />ou use seu e-mail<span /></div>
             <v-form ref="formRef" @submit.prevent="submit" class="entrance-form" :disabled="busy">
               <v-text-field v-if="mode === 'register'" v-model.trim="name" label="Seu nome" autocomplete="name" :rules="[v => !!String(v || '').trim() || 'Como podemos chamar você?']" variant="outlined" density="comfortable" color="#d5b877" hide-details="auto" />
               <v-text-field v-model.trim="email" label="E-mail" prepend-inner-icon="mdi-email-outline" type="email" autocomplete="email" :rules="emailRules" variant="outlined" density="comfortable" color="#d5b877" hide-details="auto" placeholder="voce@exemplo.com" />
@@ -52,8 +52,8 @@ defineProps({
   canResendConfirmation: { type: Boolean, default: false }, confirmationEmail: { type: String, default: '' },
   recoveryRequested: { type: Boolean, default: false }
 });
-const emit = defineEmits(['google', 'facebook', 'submit', 'reset-password', 'resend-confirmation', 'clear-feedback']);
-const providers = ref({ google: false, facebook: false });
+const emit = defineEmits(['google', 'submit', 'reset-password', 'resend-confirmation', 'clear-feedback']);
+const providers = ref({ google: false });
 let active = true;
 onMounted(async () => { const available = await availableSocialProviders(); if (active) providers.value = available; });
 onUnmounted(() => { active = false; });
@@ -92,7 +92,6 @@ function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'logi
 .entrance-social .v-btn { font-size:13px; text-transform:none; letter-spacing:0; border-radius:10px; }
 .entrance-google { background:#192632 !important; border-color:#75808c70 !important; color:#ede7d8 !important; }
 .entrance-google:hover { border-color:var(--entrance-gold) !important; }
-.entrance-facebook { color:var(--entrance-soft) !important; }
 .entrance-divider { display:flex; align-items:center; gap:16px; margin:26px 0; font-size:11px; color:var(--entrance-soft); }
 .entrance-divider span { height:1px; flex:1; background:#71808d38; }
 .entrance-form { display:grid; gap:18px; }
@@ -139,7 +138,7 @@ function toggleMode() { mode.value = mode.value === 'login' ? 'register' : 'logi
 .entrance-kicker { width:fit-content; display:flex; align-items:center; gap:9px; padding:8px 13px; border:1px solid #e5b855b0; border-radius:24px; background:#d9b3680a; font-size:12px; letter-spacing:0; margin-bottom:23px; }
 .entrance-form-area h1 { font-size:clamp(28px,2.4vw,37px); line-height:1.18; font-weight:650; letter-spacing:-1px; }
 .entrance-form-description { font-size:14px; margin:16px 0 28px; color:#b9c4cb; }
-.entrance-google,.entrance-facebook { border-color:#6e8a9c70 !important; background:#23344070 !important; color:#f2eee4 !important; }
+.entrance-google { border-color:#6e8a9c70 !important; background:#23344070 !important; color:#f2eee4 !important; }
 .entrance-social { gap:12px; }
 .entrance-form :deep(.v-field) { background:#0b192566; border-radius:12px; }
 .entrance-form :deep(.v-field__prepend-inner) { color:#d9bd80; }
